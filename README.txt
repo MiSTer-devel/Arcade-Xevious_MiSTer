@@ -1,0 +1,34 @@
+---------------------------------------------------------------------------------
+-- 
+-- Arcade: Xevious port to MiSTer by Sorgelig
+-- 23 October 2017
+-- 
+---------------------------------------------------------------------------------
+-- Xevious by Dar (darfpga@aol.fr) (01 May 2017)
+-- http://darfpga.blogspot.fr
+---------------------------------------------------------------------------------
+-- gen_ram.vhd
+-------------------------------- 
+-- Copyright 2005-2008 by Peter Wendrich (pwsoft@syntiac.com)
+-- http://www.syntiac.com/fpga64.html
+---------------------------------------------------------------------------------
+-- T80/T80se - Version : 0247
+-----------------------------
+-- Z80 compatible microprocessor core
+-- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
+---------------------------------------------------------------------------------
+-- 
+-- 
+-- Keyboard inputs :
+--
+--   F3          : Add coin
+--   F2          : Start 2 players
+--   F1          : Start 1 player
+--   UP,DOWN,LEFT,RIGHT arrows : Movements
+--   SPACE       : Fire  
+--   CTRL        : Bomb
+--
+-- Joystick support.
+-- 
+-- 
+---------------------------------------------------------------------------------
