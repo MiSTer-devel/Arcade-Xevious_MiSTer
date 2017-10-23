@@ -140,6 +140,10 @@ port(
  video_hs       : out std_logic;
  video_vs       : out std_logic;
  video_en       : out std_logic;
+
+ blank_h        : out std_logic;
+ blank_v        : out std_logic;
+
  audio          : out std_logic_vector(10 downto 0);
 
 -- ledr           : out std_logic_vector(17 downto 0);
@@ -1342,6 +1346,8 @@ vcnt    => vcnt,
 hsync   => video_hs,
 vsync   => video_vs,
 csync   => video_csync,
+blank_h => blank_h,
+blank_v => blank_v,
 blankn  => video_blankn
 );
 

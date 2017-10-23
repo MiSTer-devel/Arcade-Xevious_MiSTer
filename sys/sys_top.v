@@ -284,12 +284,12 @@ vip vip
 	.ram2_write(0),
 
 	//Video input
-	.in_vid_clk(clk_vid),
-	.in_vid_data({r_out, g_out, b_out}),
-	.in_vid_de(de),
-	.in_vid_v_sync(vs),
-	.in_vid_h_sync(hs),
-	.in_vid_datavalid(ce_pix),
+	.in_vid_clk(clk_hdmi),
+	.in_vid_data({hr_out, hg_out, hb_out}),
+	.in_vid_de(hde),
+	.in_vid_v_sync(hvs),
+	.in_vid_h_sync(hhs),
+	.in_vid_datavalid(ce_hpix),
 	.in_vid_locked(1),
 	.in_vid_f(0),
 	.in_vid_color_encoding(0),
@@ -323,6 +323,11 @@ vip_config vip_config
 	.writedata(ctl_writedata),
 	.waitrequest(ctl_waitrequest)
 );
+
+wire  [7:0] hr_out, hg_out, hb_out;
+wire        hvs, hhs, hde;
+wire        clk_hdmi, ce_hpix;
+
 `endif
 
 
@@ -618,9 +623,8 @@ emu emu
 	.RESET(reset),
 	.HPS_BUS({ctl_clk, clk_vid, ce_pix, de, hs, vs, io_wait, clk_sys, io_fpga, io_uio, io_strobe, io_wide, io_din, io_dout}),
 
-	.CLK_VIDEO(clk_vid),
-	.CE_PIXEL(ce_pix),
-
+	.VGA_CLK(clk_vid),
+	.VGA_CE(ce_pix),
 	.VGA_R(r_out),
 	.VGA_G(g_out),
 	.VGA_B(b_out),
@@ -628,14 +632,22 @@ emu emu
 	.VGA_VS(vs),
 	.VGA_DE(de),
 
+`ifndef LITE
+	.HDMI_CLK(clk_hdmi),
+	.HDMI_CE(ce_hpix),
+	.HDMI_R(hr_out),
+	.HDMI_G(hg_out),
+	.HDMI_B(hb_out),
+	.HDMI_HS(hhs),
+	.HDMI_VS(hvs),
+	.HDMI_DE(hde),
+	.HDMI_ARX(ARX),
+	.HDMI_ARY(ARY),
+`endif
+
 	.LED_USER(led_user),
 	.LED_POWER(led_power),
 	.LED_DISK(led_disk),
-
-`ifndef LITE
-	.VIDEO_ARX(ARX),
-	.VIDEO_ARY(ARY),
-`endif
 
 	.AUDIO_L(audio_l),
 	.AUDIO_R(audio_r),

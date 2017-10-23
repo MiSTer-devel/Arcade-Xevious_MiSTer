@@ -32,15 +32,11 @@ module emu
 	inout  [43:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
-	output        CLK_VIDEO,
+	output        VGA_CLK,
 
-	//Multiple resolutions are supported using different CE_PIXEL rates.
+	//Multiple resolutions are supported using different VGA_CE rates.
 	//Must be based on CLK_VIDEO
-	output        CE_PIXEL,
-
-	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
-	output  [7:0] VIDEO_ARX,
-	output  [7:0] VIDEO_ARY,
+	output        VGA_CE,
 
 	output  [7:0] VGA_R,
 	output  [7:0] VGA_G,
@@ -48,6 +44,24 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+
+	//Base video clock. Usually equals to CLK_SYS.
+	output        HDMI_CLK,
+
+	//Multiple resolutions are supported using different HDMI_CE rates.
+	//Must be based on CLK_VIDEO
+	output        HDMI_CE,
+
+	output  [7:0] HDMI_R,
+	output  [7:0] HDMI_G,
+	output  [7:0] HDMI_B,
+	output        HDMI_HS,
+	output        HDMI_VS,
+	output        HDMI_DE,    // = ~(VBlank | HBlank)
+
+	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
+	output  [7:0] HDMI_ARX,
+	output  [7:0] HDMI_ARY,
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
@@ -103,18 +117,19 @@ assign LED_USER  = 0;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign VIDEO_ARX = status[1] ? 8'd16 : 8'd4;
-assign VIDEO_ARY = status[1] ? 8'd9  : 8'd3; 
+assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd1;
+assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd1;
 
 `include "build_id.v" 
 localparam CONF_STR = {
 	"A.XEVS;;",
 	"-;",
-	"O1,Aspect ratio,4:3,16:9;",
+	"O1,Aspect Ratio,Original,Wide;",
+	"O2,Orientation,Vert,Horz;",
 	"-;",
 	"T6,Reset;",
 	"J,Fire,Bomb,Start 1P,Coin;",
-	"V,v1.00.",`BUILD_DATE
+	"V,v1.50.",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
@@ -164,10 +179,10 @@ always @(posedge clk_sys) begin
 	
 	if(old_state != ps2_key[64]) begin
 		casex(code)
-			'hX75: btn_right       <= pressed; // up
-			'hX72: btn_left        <= pressed; // down
-			'hX6B: btn_up          <= pressed; // left
-			'hX74: btn_down        <= pressed; // right
+			'hX75: btn_up          <= pressed; // up
+			'hX72: btn_down        <= pressed; // down
+			'hX6B: btn_left        <= pressed; // left
+			'hX74: btn_right       <= pressed; // right
 			'h029: btn_fire        <= pressed; // space
 			'hX14: btn_bomb        <= pressed; // ctrl
 
@@ -184,22 +199,61 @@ reg btn_right = 0;
 reg btn_left  = 0;
 reg btn_fire  = 0;
 reg btn_bomb  = 0;
-
 reg btn_coin        = 0;
 reg btn_one_player  = 0;
 reg btn_two_players = 0;
 
-wire [3:0] r,g,b;
+wire m_up     = status[2] ? btn_left  | joy[1] : btn_up    | joy[3];
+wire m_down   = status[2] ? btn_right | joy[0] : btn_down  | joy[2];
+wire m_left   = status[2] ? btn_down  | joy[2] : btn_left  | joy[1];
+wire m_right  = status[2] ? btn_up    | joy[3] : btn_right | joy[0];
 
-assign CLK_VIDEO = clk_sys;
-assign VGA_R  = {r,r};
-assign VGA_G  = {g,g};
-assign VGA_B  = {b,b};
+wire hblank, vblank;
+wire ce_vid;
+wire hs, vs;
+wire rde, rhs, rvs;
+wire [3:0] r,g,b;
+wire [3:0] rr,rg,rb;
+
+assign VGA_CLK  = clk_sys;
+assign VGA_CE   = ce_vid;
+assign VGA_R    = {r,r};
+assign VGA_G    = {g,g};
+assign VGA_B    = {b,b};
+assign VGA_DE   = ~(hblank | vblank);
+assign VGA_HS   = hs;
+assign VGA_VS   = vs;
+
+assign HDMI_CLK = VGA_CLK;
+assign HDMI_CE  = status[2] ? VGA_CE : 1'b1;
+assign HDMI_R   = status[2] ? VGA_R  : {rr,rr};
+assign HDMI_G   = status[2] ? VGA_G  : {rg,rg};
+assign HDMI_B   = status[2] ? VGA_B  : {rb,rb};
+assign HDMI_DE  = status[2] ? VGA_DE : rde;
+assign HDMI_HS  = status[2] ? VGA_HS : rhs;
+assign HDMI_VS  = status[2] ? VGA_VS : rvs;
+
+screen_rotate #(288,224,12) screen_rotate
+(
+	.clk_in(clk_sys),
+	.ce_in(ce_vid),
+	.video_in({r,g,b}),
+	.hblank(hblank),
+	.vblank(vblank),
+
+	.clk_out(clk_sys),
+	.video_out({rr,rg,rb}),
+	.hsync(rhs),
+	.vsync(rvs),
+	.de(rde)
+);
 
 wire [10:0] audio;
 assign AUDIO_L = {audio, 5'b00000};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
+
+
 
 wire [16:0] rom_addr;
 wire  [7:0] rom_do;
@@ -219,10 +273,11 @@ xevious xevious
 	.video_r(r),
 	.video_g(g),
 	.video_b(b),
-	.video_hs(VGA_HS),
-	.video_vs(VGA_VS),
-	.video_en(CE_PIXEL),
-	.video_blankn(VGA_DE),
+	.video_en(ce_vid),
+	.video_hs(hs),
+	.video_vs(vs),
+	.blank_h(hblank),
+	.blank_v(vblank),
 
 	.audio(audio),
 
@@ -234,10 +289,10 @@ xevious xevious
 	.coin(btn_coin | joy[7]),
 	.start1(btn_one_player | joy[6]),
 	.start2(btn_two_players),
-	.up(btn_up | joy[1]),
-	.down(btn_down | joy[0]),
-	.left(btn_left | joy[2]),
-	.right(btn_right | joy[3]),
+	.up(m_up),
+	.down(m_down),
+	.left(m_left),
+	.right(m_right),
 	.fire(btn_fire | joy[4]),
 	.bomb(btn_bomb | joy[5])
 );

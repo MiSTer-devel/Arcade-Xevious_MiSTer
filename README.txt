@@ -18,6 +18,9 @@
 -- Copyright (c) 2001-2002 Daniel Wallner (jesus@opencores.org)
 ---------------------------------------------------------------------------------
 -- 
+-- Support screen and controls rotation on HDMI output.
+-- Only controls are rotated on VGA output.
+-- 
 -- 
 -- Keyboard inputs :
 --

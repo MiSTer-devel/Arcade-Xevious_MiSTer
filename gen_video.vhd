@@ -14,6 +14,8 @@ vcnt    : out std_logic_vector(8 downto 0);
 hsync   : out std_logic;
 vsync   : out std_logic;
 csync   : out std_logic; -- composite sync for TV 
+blank_h : out std_logic;
+blank_v : out std_logic;
 blankn  : out std_logic
 );
 end gen_video;
@@ -30,6 +32,9 @@ signal hsync1       : std_logic;
 signal hsync2       : std_logic; 
 
 begin
+
+blank_h <= hblank;
+blank_v <= vblank;
 
 hcnt  <= std_logic_vector(hcntReg);
 vcnt  <= std_logic_vector(vcntReg);
