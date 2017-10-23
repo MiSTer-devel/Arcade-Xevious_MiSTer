@@ -107,6 +107,7 @@ assign de = ~(hsync | vsync);
 
 always @(posedge clk_out) begin
 	reg old_buff, old_buff2;
+	reg hs;
 	
 	integer xpos, ypos;
 	
@@ -120,10 +121,12 @@ always @(posedge clk_out) begin
 		vsync <= 0;
 	end
 	
+	hsync <= hs; // delay one cycle!
+
 	if(~vsync) begin
 
 		vout <= out;
-		hsync <= (xpos >= HEIGHT);
+		hs <= (xpos >= HEIGHT);
 		if(xpos < HEIGHT) addr_out <= addr_out + 1'd1;
 
 		xpos <= xpos + 1;
