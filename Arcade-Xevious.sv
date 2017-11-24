@@ -113,7 +113,7 @@ assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DD
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 
-assign LED_USER  = 0;
+assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
@@ -128,8 +128,8 @@ localparam CONF_STR = {
 	"O2,Orientation,Vert,Horz;",
 	"-;",
 	"T6,Reset;",
-	"J,Fire,Bomb,Start 1P,Coin;",
-	"V,v1.50.",`BUILD_DATE
+	"J,Fire,Bomb,Start 1P,Start 2P;",
+	"V,v2.00.",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
@@ -150,6 +150,11 @@ pll pll
 wire [31:0] status;
 wire  [1:0] buttons;
 
+wire        ioctl_download;
+wire        ioctl_wr;
+wire [24:0] ioctl_addr;
+wire  [7:0] ioctl_dout;
+
 wire [64:0] ps2_key;
 
 wire [15:0] joystick_0, joystick_1;
@@ -164,6 +169,11 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.buttons(buttons),
 	.status(status),
+
+	.ioctl_download(ioctl_download),
+	.ioctl_wr(ioctl_wr),
+	.ioctl_addr(ioctl_addr),
+	.ioctl_dout(ioctl_dout),
 
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1),
@@ -188,7 +198,6 @@ always @(posedge clk_sys) begin
 
 			'h005: btn_one_player  <= pressed; // F1
 			'h006: btn_two_players <= pressed; // F2
-			'h004: btn_coin        <= pressed; // F3
 		endcase
 	end
 end
@@ -199,7 +208,6 @@ reg btn_right = 0;
 reg btn_left  = 0;
 reg btn_fire  = 0;
 reg btn_bomb  = 0;
-reg btn_coin        = 0;
 reg btn_one_player  = 0;
 reg btn_two_players = 0;
 
@@ -207,6 +215,12 @@ wire m_up     = status[2] ? btn_left  | joy[1] : btn_up    | joy[3];
 wire m_down   = status[2] ? btn_right | joy[0] : btn_down  | joy[2];
 wire m_left   = status[2] ? btn_down  | joy[2] : btn_left  | joy[1];
 wire m_right  = status[2] ? btn_up    | joy[3] : btn_right | joy[0];
+wire m_fire   = btn_fire | joy[4];
+wire m_bomb   = btn_bomb | joy[5];
+
+wire m_start1 = btn_one_player  | joy[6];
+wire m_start2 = btn_two_players | joy[7];
+wire m_coin   = m_start1 | m_start2;
 
 wire hblank, vblank;
 wire ce_vid;
@@ -255,20 +269,14 @@ assign AUDIO_S = 0;
 
 
 
-wire [16:0] rom_addr;
-wire  [7:0] rom_do;
-
-xevious_cpu_gfx_8bits rom
-(
-	.clk(~clk_sys),
-	.addr(rom_addr),
-	.data(rom_do)
-);
-
 xevious xevious
 (
 	.clock_18(clk_sys),
-	.reset(RESET | status[0] | status[6] | buttons[1]),
+	.reset(RESET | status[0] | status[6] | buttons[1] | ioctl_download),
+
+	.dn_addr(ioctl_addr[16:0]),
+	.dn_data(ioctl_dout),
+	.dn_wr(ioctl_wr),
 
 	.video_r(r),
 	.video_g(g),
@@ -281,20 +289,17 @@ xevious xevious
 
 	.audio(audio),
 
-	.rom_bus_addr_o(rom_addr),
-	.rom_bus_do(rom_do),
-
 	.b_test(1),
 	.b_svce(1), 
-	.coin(btn_coin | joy[7]),
-	.start1(btn_one_player | joy[6]),
-	.start2(btn_two_players),
+	.coin(m_coin),
+	.start1(m_start1),
+	.start2(m_start2),
 	.up(m_up),
 	.down(m_down),
 	.left(m_left),
 	.right(m_right),
-	.fire(btn_fire | joy[4]),
-	.bomb(btn_bomb | joy[5])
+	.fire(m_fire),
+	.bomb(m_bomb)
 );
 
 endmodule

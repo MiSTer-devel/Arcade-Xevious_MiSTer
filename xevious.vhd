@@ -130,7 +130,11 @@ entity xevious is
 port(
  clock_18       : in std_logic;
  reset          : in std_logic;
--- tv15Khz_mode : in std_logic;
+
+ dn_addr        : in  std_logic_vector(16 downto 0);
+ dn_data        : in  std_logic_vector(7 downto 0);
+ dn_wr          : in  std_logic;
+
  video_r        : out std_logic_vector(3 downto 0);
  video_g        : out std_logic_vector(3 downto 0);
  video_b        : out std_logic_vector(3 downto 0);
@@ -148,9 +152,6 @@ port(
 
 -- ledr           : out std_logic_vector(17 downto 0);
 -- sw             : in  std_logic_vector(17 downto 0);
- 
- rom_bus_addr_o : out std_logic_vector(16 downto 0);
- rom_bus_do     : in std_logic_vector(7 downto 0);
  
  b_test         : in std_logic;
  b_svce         : in std_logic;
@@ -404,6 +405,11 @@ architecture struct of xevious is
 
  signal buttons  : std_logic_vector(3 downto 0);
  signal joy      : std_logic_vector(3 downto 0);
+
+ signal rom_bus_addr_o : std_logic_vector(16 downto 0);
+ signal rom_bus_do     : std_logic_vector(7 downto 0);
+
+ signal roms_cs,romta_cs,romtb_cs,romtc_cs,rom50_cs,rom51_cs,rom54_cs : std_logic;
 
 begin
 
@@ -1186,7 +1192,7 @@ begin
 		-- CPU spy this counter to start a new game
 		if cs51XX_credit_mode = '1' then
 			  -- decreasing credit by 1 will start a new game for 1 player
-			if (start1 = '1' and start1_r = '0') then
+			if (start1 = '0' and start1_r = '1') then
 				cs51XX_credit_mode <= '0';
 				if credit_bcd_0 = "0000" then 
 					if credit_bcd_1 /= "0000" then
@@ -1199,7 +1205,7 @@ begin
 			end if;
 
 		  -- decreasing credit by 2 (at once) will start a new game for 2 player
-			if (start2 = '1' and start2_r = '0') then
+			if (start2 = '0' and start2_r = '1') then
 				if credit_bcd_0 = "0000" or credit_bcd_0 = "0001" then
  					if credit_bcd_1 /= "0000" then
 						cs51XX_credit_mode <= '0';
@@ -1459,11 +1465,17 @@ port map(
 );
 
 -- cs54xx program ROM
-cs54xx_prog : entity work.cs54xx_prog
-port map(
- clk  => clock_18n,
- addr => cs54xx_rom_addr(9 downto 0),
- data => cs54xx_rom_do
+cs54xx_prog : work.dpram generic map (10,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and rom54_cs,
+	address_a => dn_addr(9 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => cs54xx_rom_addr(9 downto 0),
+	q_b       => cs54xx_rom_do
 );
 
 -- mb88 - cs50xx (28 pins IC, 2048 bytes rom)
@@ -1499,38 +1511,82 @@ port map(
  rom_data  => cs50xx_rom_do
 );
 
--- cs50xx program ROM
-cs50xx_prog : entity work.cs50xx_prog
-port map(
- clk  => clock_18n,
- addr => cs50xx_rom_addr(10 downto 0),
- data => cs50xx_rom_do
+roms_cs  <= '1' when dn_addr(16 downto 12) < "10001"   else '0';
+romta_cs <= '1' when dn_addr(16 downto 12) = "10001"   else '0';
+romtb_cs <= '1' when dn_addr(16 downto 13) = "1001"    else '0';
+romtc_cs <= '1' when dn_addr(16 downto 12) = "10100"   else '0';
+rom50_cs <= '1' when dn_addr(16 downto 11) = "101010"  else '0';
+rom51_cs <= '1' when dn_addr(16 downto 10) = "1010110" else '0';
+rom54_cs <= '1' when dn_addr(16 downto 10) = "1010111" else '0';
+
+sram : work.dpram generic map (17,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and roms_cs,
+	address_a => dn_addr(16 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => rom_bus_addr_o,
+	q_b       => rom_bus_do
 );
 
 
+-- cs50xx program ROM
+cs50xx_prog : work.dpram generic map (11,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and rom50_cs,
+	address_a => dn_addr(10 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => cs50xx_rom_addr(10 downto 0),
+	q_b       => cs50xx_rom_do
+);
 
 -- terrain map 2a ROM
-terrain_2a : entity work.terrain_2a
-port map(
- clk  => clock_18n,
- addr => terrain_2a_rom_addr,
- data => terrain_2a_rom_do
+terrain_2a : work.dpram generic map (12,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and romta_cs,
+	address_a => dn_addr(11 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => terrain_2a_rom_addr,
+	q_b       => terrain_2a_rom_do
 );
 
 -- terrain map 2b ROM
-terrain_2b : entity work.terrain_2b
-port map(
- clk  => clock_18n,
- addr => terrain_2b_rom_addr,
- data => terrain_2b_rom_do
+terrain_2b : work.dpram generic map (13,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and romtb_cs,
+	address_a => dn_addr(12 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => terrain_2b_rom_addr,
+	q_b       => terrain_2b_rom_do
 );
 
 -- terrain map 2c ROM
-terrain_2c : entity work.terrain_2c
-port map(
- clk  => clock_18n,
- addr => terrain_2c_rom_addr,
- data => terrain_2c_rom_do
+terrain_2c : work.dpram generic map (12,8)
+port map
+(
+	clock_a   => clock_18,
+	wren_a    => dn_wr and romtc_cs,
+	address_a => dn_addr(11 downto 0),
+	data_a    => dn_data,
+
+	clock_b   => clock_18n,
+	address_b => terrain_2c_rom_addr,
+	q_b       => terrain_2c_rom_do
 );
 
 -- foreground/background attr RAM   0xB000-0xBFFF
