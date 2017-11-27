@@ -267,12 +267,17 @@ assign AUDIO_L = {audio, 5'b00000};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
 
-
+reg initReset_n = 0;
+always @(posedge clk_sys) begin
+	reg old_download;
+	old_download <= ioctl_download;
+	if(old_download & ~ioctl_download) initReset_n <= 1;
+end
 
 xevious xevious
 (
 	.clock_18(clk_sys),
-	.reset(RESET | status[0] | status[6] | buttons[1] | ioctl_download),
+	.reset(RESET | status[0] | status[6] | buttons[1] | ~initReset_n),
 
 	.dn_addr(ioctl_addr[16:0]),
 	.dn_data(ioctl_dout),
