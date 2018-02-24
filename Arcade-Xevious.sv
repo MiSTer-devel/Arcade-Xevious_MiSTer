@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [43:0] HPS_BUS,
+	inout  [44:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        VGA_CLK,
@@ -57,7 +57,8 @@ module emu
 	output  [7:0] HDMI_B,
 	output        HDMI_HS,
 	output        HDMI_VS,
-	output        HDMI_DE,    // = ~(VBlank | HBlank)
+	output        HDMI_DE,   // = ~(VBlank | HBlank)
+	output  [1:0] HDMI_SL,   // scanlines fx
 
 	//Video aspect ratio for HDMI. Most retro systems have ratio 4:3.
 	output  [7:0] HDMI_ARX,
@@ -65,7 +66,7 @@ module emu
 
 	output        LED_USER,  // 1 - ON, 0 - OFF.
 
-	// b[1]: 0 - LED status is system status ORed with b[0]
+	// b[1]: 0 - LED status is system status OR'd with b[0]
 	//       1 - LED status is controled solely by b[0]
 	// hint: supply 2'b00 to let the system control the LED.
 	output  [1:0] LED_POWER,
@@ -73,14 +74,15 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S, // 1 - signed audio samples, 0 - unsigned
-	input         TAPE_IN,
+	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+	output  [1:0] AUDIO_MIX, // 0 - no mix, 1 - 25%, 2 - 50%, 3 - 100% (mono)
 
 	// SD-SPI
 	output        SD_SCK,
 	output        SD_MOSI,
 	input         SD_MISO,
 	output        SD_CS,
+	input         SD_CD,
 
 	//High latency DDR3 RAM interface
 	//Use for non-critical time purposes
@@ -109,6 +111,8 @@ module emu
 	output        SDRAM_nWE
 );
 
+assign AUDIO_MIX = 0;
+
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = 0; 
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
@@ -126,6 +130,7 @@ localparam CONF_STR = {
 	"-;",
 	"O1,Aspect Ratio,Original,Wide;",
 	"O2,Orientation,Vert,Horz;",
+	"O34,Scanlines(vert),No,25%,50%,75%;",
 	"-;",
 	"T6,Reset;",
 	"J,Fire,Bomb,Start 1P,Start 2P;",
@@ -155,7 +160,7 @@ wire        ioctl_wr;
 wire [24:0] ioctl_addr;
 wire  [7:0] ioctl_dout;
 
-wire [64:0] ps2_key;
+wire [10:0] ps2_key;
 
 wire [15:0] joystick_0, joystick_1;
 wire [15:0] joy = joystick_0 | joystick_1;
@@ -180,14 +185,13 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.ps2_key(ps2_key)
 );
 
-wire pressed    = (ps2_key[15:8] != 8'hf0);
-wire extended   = (~pressed ? (ps2_key[23:16] == 8'he0) : (ps2_key[15:8] == 8'he0));
-wire [8:0] code = ps2_key[63:24] ? 9'd0 : {extended, ps2_key[7:0]}; // filter out PRNSCR and PAUSE
+wire       pressed = ps2_key[9];
+wire [8:0] code    = ps2_key[8:0];
 always @(posedge clk_sys) begin
 	reg old_state;
-	old_state <= ps2_key[64];
+	old_state <= ps2_key[10];
 	
-	if(old_state != ps2_key[64]) begin
+	if(old_state != ps2_key[10]) begin
 		casex(code)
 			'hX75: btn_up          <= pressed; // up
 			'hX72: btn_down        <= pressed; // down
@@ -246,6 +250,7 @@ assign HDMI_B   = status[2] ? VGA_B  : {rb,rb};
 assign HDMI_DE  = status[2] ? VGA_DE : rde;
 assign HDMI_HS  = status[2] ? VGA_HS : rhs;
 assign HDMI_VS  = status[2] ? VGA_VS : rvs;
+assign HDMI_SL  = status[2] ? 2'd0   : status[4:3];
 
 screen_rotate #(288,224,12) screen_rotate
 (
