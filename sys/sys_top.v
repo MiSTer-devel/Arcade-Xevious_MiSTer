@@ -1,6 +1,6 @@
 //============================================================================
 //
-//  MiSTer hardware abstraction module
+//  MiSTer hardware abstraction module (for arcades)
 //  (c)2017,2018 Sorgelig
 //
 //  This program is free software; you can redistribute it and/or modify it
@@ -190,6 +190,7 @@ cyclonev_hps_interface_mpu_general_purpose h2f_gp
 reg [15:0] cfg;
 
 reg        cfg_got   = 0;
+reg        cfg_set   = 0;
 //wire [2:0] hdmi_res  = cfg[10:8];
 wire       dvi_mode  = cfg[7];
 wire       audio_96k = cfg[6];
@@ -205,6 +206,7 @@ reg [31:0] cfg_custom_p2;
 
 reg  [4:0] vol_att = 0;
 
+reg        vip_newcfg = 0;
 always@(posedge clk_sys) begin
 	reg  [7:0] cmd;
 	reg        has_cmd;
@@ -224,21 +226,22 @@ always@(posedge clk_sys) begin
 		else begin
 			if(cmd == 1) begin
 				cfg <= io_din;
-				cfg_got <= 1;
+				cfg_set <= 1;
 			end
 			if(cmd == 'h20) begin
-				cfg_got <= 0;
+				cfg_set <= 0;
 				cnt <= cnt + 1'd1;
 				if(cnt<8) begin
+					if(!cnt) vip_newcfg <= ~cfg_ready;
 					case(cnt)
-						0: WIDTH  <= io_din[11:0];
-						1: HFP    <= io_din[11:0];
-						2: HS     <= io_din[11:0];
-						3: HBP    <= io_din[11:0];
-						4: HEIGHT <= io_din[11:0];
-						5: VFP    <= io_din[11:0];
-						6: VS     <= io_din[11:0];
-						7: VBP    <= io_din[11:0];
+						0: if(WIDTH  != io_din[11:0]) begin WIDTH  <= io_din[11:0]; vip_newcfg <= 1; end
+						1: if(HFP    != io_din[11:0]) begin HFP    <= io_din[11:0]; vip_newcfg <= 1; end
+						2: if(HS     != io_din[11:0]) begin HS     <= io_din[11:0]; vip_newcfg <= 1; end
+						3: if(HBP    != io_din[11:0]) begin HBP    <= io_din[11:0]; vip_newcfg <= 1; end
+						4: if(HEIGHT != io_din[11:0]) begin HEIGHT <= io_din[11:0]; vip_newcfg <= 1; end
+						5: if(VFP    != io_din[11:0]) begin VFP    <= io_din[11:0]; vip_newcfg <= 1; end
+						6: if(VS     != io_din[11:0]) begin VS     <= io_din[11:0]; vip_newcfg <= 1; end
+						7: if(VBP    != io_din[11:0]) begin VBP    <= io_din[11:0]; vip_newcfg <= 1; end
 					endcase
 					if(cnt == 1) begin
 						cfg_custom_p1 <= 0;
@@ -260,6 +263,16 @@ always@(posedge clk_sys) begin
 			if(cmd == 'h26) vol_att <= io_din[4:0];
 			if(cmd == 'h27) VSET    <= io_din[11:0];
 		end
+	end
+end
+
+always @(posedge clk_sys) begin
+	reg vsd, vsd2;
+	if(~cfg_ready || ~cfg_set) cfg_got <= cfg_set;
+	else begin
+		vsd  <= HDMI_TX_VS;
+		vsd2 <= vsd;
+		if(~vsd2 & vsd) cfg_got <= cfg_set;
 	end
 end
 
@@ -368,7 +381,7 @@ vip_config vip_config
 
 	.ARX(ARX),
 	.ARY(ARY),
-	.CFG_SET(cfg_got),
+	.CFG_SET(vip_newcfg & cfg_got),
 
 	.WIDTH(WIDTH),
 	.HFP(HFP),
@@ -652,7 +665,7 @@ osd hdmi_osd
 
 	.io_osd(io_osd),
 	.io_strobe(io_strobe),
-	.io_din(io_din[7:0]),
+	.io_din(io_din),
 
 	.clk_video(iHdmiClk),
 	.din(hdmi_data),
@@ -687,7 +700,7 @@ osd vga_osd
 
 	.io_osd(io_osd),
 	.io_strobe(io_strobe),
-	.io_din(io_din[7:0]),
+	.io_din(io_din),
 
 	.clk_video(clk_vid),
 	.din(de ? {r_out, g_out, b_out} : 24'd0),
@@ -837,6 +850,11 @@ wire        clk_hdmi, ce_hpix;
 wire  [7:0] hr, hg, hb;
 wire  [1:0] hsl;
 
+assign audio_mix = 0;
+assign {ram_clk, ram_burstcount, ram_address, ram_writedata, ram_byteenable, ram_read, ram_write} = 0; 
+assign {SDIO_CLK, SDIO_CMD, SDIO_DAT[3]} = {3{1'bZ}};
+assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = {39{1'bZ}};
+
 emu emu
 (
 	.CLK_50M(FPGA_CLK3_50),
@@ -873,43 +891,7 @@ emu emu
 
 	.AUDIO_L(audio_ls),
 	.AUDIO_R(audio_rs),
-	.AUDIO_S(audio_s),
-	.AUDIO_MIX(audio_mix),
-
-	// SCK  -> CLK
-	// MOSI -> CMD
-	// MISO <- DAT0
-	//    Z -> DAT1
-	//    Z -> DAT2
-	// CS   -> DAT3
-	.SD_SCK(SDIO_CLK),
-	.SD_MOSI(SDIO_CMD),
-	.SD_MISO(SDIO_DAT[0]),
-	.SD_CS(SDIO_DAT[3]),
-	.SD_CD(VGA_EN ? VGA_HS : SDIO_CD),
-
-	.DDRAM_CLK(ram_clk),
-	.DDRAM_ADDR(ram_address),
-	.DDRAM_BURSTCNT(ram_burstcount),
-	.DDRAM_BUSY(ram_waitrequest),
-	.DDRAM_DOUT(ram_readdata),
-	.DDRAM_DOUT_READY(ram_readdatavalid),
-	.DDRAM_RD(ram_read),
-	.DDRAM_DIN(ram_writedata),
-	.DDRAM_BE(ram_byteenable),
-	.DDRAM_WE(ram_write),
-
-	.SDRAM_DQ(SDRAM_DQ),
-	.SDRAM_A(SDRAM_A),
-	.SDRAM_DQML(SDRAM_DQML),
-	.SDRAM_DQMH(SDRAM_DQMH),
-	.SDRAM_BA(SDRAM_BA),
-	.SDRAM_nCS(SDRAM_nCS),
-	.SDRAM_nWE(SDRAM_nWE),
-	.SDRAM_nRAS(SDRAM_nRAS),
-	.SDRAM_nCAS(SDRAM_nCAS),
-	.SDRAM_CLK(SDRAM_CLK),
-	.SDRAM_CKE(SDRAM_CKE)
+	.AUDIO_S(audio_s)
 );
 
 scanlines scanlines
