@@ -24,9 +24,16 @@
 -- 
 -- Keyboard inputs :
 --
---   F3          : Add coin
---   F2          : Start 2 players
---   F1          : Start 1 player
+--   F1          : Start Player 1
+--   F2          : Start Player 2
+--   F3		 : Coin Player 1
+--
+--   Mame mapping :
+--   1		 : Start Player 1
+--   2		 : Start Player 2
+--   5           : Coin Player 1
+--
+
 --   UP,DOWN,LEFT,RIGHT arrows : Movements
 --   SPACE       : Fire  
 --   CTRL        : Bomb
