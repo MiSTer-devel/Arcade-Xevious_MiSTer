@@ -81,25 +81,28 @@ assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
 
-assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd1;
-assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd1;
+assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd3;
+assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
 
 `include "build_id.v" 
 localparam CONF_STR = {
 	"A.XEVS;;",
+   "F,rom;", // allow loading of alternate ROMs
 	"-;",
 	"O1,Aspect Ratio,Original,Wide;",
 	"O2,Orientation,Vert,Horz;",
-	"O34,Scanlines(vert),No,25%,50%,75%;",
+	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"-;",
-	"T6,Reset;",
-	"J,Fire,Bomb,Start 1P,Start 2P;",
-	"V,v2.00.",`BUILD_DATE
+// LOOK AT GALAGA
+	"-;",
+	"R0,Reset;",
+	"J1,Fire,Bomb,Start 1P,Start 2P;",
+	"V,v",`BUILD_DATE
 };
 
 ////////////////////   CLOCKS   ///////////////////
 
-wire clk_sys;
+wire clk_sys,clk_12,clk_24,clk_36,clk_48;
 wire pll_locked;
 
 pll pll
@@ -107,6 +110,10 @@ pll pll
 	.refclk(CLK_50M),
 	.rst(0),
 	.outclk_0(clk_sys),
+	.outclk_1(clk_48),
+	.outclk_2(clk_12),
+	.outclk_3(clk_24),
+	.outclk_4(clk_36),
 	.locked(pll_locked)
 );
 
@@ -114,6 +121,7 @@ pll pll
 
 wire [31:0] status;
 wire  [1:0] buttons;
+wire        forced_scandoubler;
 
 wire        ioctl_download;
 wire        ioctl_wr;
@@ -134,6 +142,7 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.buttons(buttons),
 	.status(status),
+        .forced_scandoubler(forced_scandoubler),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_wr(ioctl_wr),
@@ -162,6 +171,11 @@ always @(posedge clk_sys) begin
 
 			'h005: btn_one_player  <= pressed; // F1
 			'h006: btn_two_players <= pressed; // F2
+			// JPAC/IPAC/MAME Style Codes
+			'h016: btn_start_1     <= pressed; // 1
+			'h01E: btn_start_2     <= pressed; // 2
+			'h02E: btn_coin_1      <= pressed; // 5
+			'h036: btn_coin_2      <= pressed; // 6
 		endcase
 	end
 end
@@ -174,6 +188,12 @@ reg btn_fire  = 0;
 reg btn_bomb  = 0;
 reg btn_one_player  = 0;
 reg btn_two_players = 0;
+
+reg btn_start_1=0;
+reg btn_start_2=0;
+reg btn_coin_1=0;
+reg btn_coin_2=0;
+
 
 wire m_up     = status[2] ? btn_left  | joy[1] : btn_up    | joy[3];
 wire m_down   = status[2] ? btn_right | joy[0] : btn_down  | joy[2];
@@ -191,40 +211,31 @@ wire ce_vid;
 wire hs, vs;
 wire rde, rhs, rvs;
 wire [3:0] r,g,b;
-wire [3:0] rr,rg,rb;
 
-assign VGA_CLK  = clk_sys;
-assign VGA_CE   = ce_vid;
-assign VGA_R    = {r,r};
-assign VGA_G    = {g,g};
-assign VGA_B    = {b,b};
-assign VGA_DE   = ~(hblank | vblank);
-assign VGA_HS   = hs;
-assign VGA_VS   = vs;
+reg ce_pix;
+always @(posedge clk_24) begin
+	reg old_clk;
+	
+	old_clk <= ce_vid;
+	ce_pix <= old_clk & ~ce_vid;
+end
 
-assign HDMI_CLK = VGA_CLK;
-assign HDMI_CE  = status[2] ? VGA_CE : 1'b1;
-assign HDMI_R   = status[2] ? VGA_R  : {rr,rr};
-assign HDMI_G   = status[2] ? VGA_G  : {rg,rg};
-assign HDMI_B   = status[2] ? VGA_B  : {rb,rb};
-assign HDMI_DE  = status[2] ? VGA_DE : rde;
-assign HDMI_HS  = status[2] ? VGA_HS : rhs;
-assign HDMI_VS  = status[2] ? VGA_VS : rvs;
-assign HDMI_SL  = status[2] ? 2'd0   : status[4:3];
 
-screen_rotate #(288,224,12) screen_rotate
+arcade_rotate_fx #(288,224,12) arcade_video
+//arcade_rotate_fx #(576,224,9) arcade_video
 (
-	.clk_in(clk_sys),
-	.ce_in(ce_vid),
-	.video_in({r,g,b}),
-	.hblank(hblank),
-	.vblank(vblank),
+        .*,
 
-	.clk_out(clk_sys),
-	.video_out({rr,rg,rb}),
-	.hsync(rhs),
-	.vsync(rvs),
-	.de(rde)
+        .clk_video(clk_24),
+        //.ce_pix(ce_vid),
+        .RGB_in({r,g,b}),
+        .HBlank(hblank),
+        .VBlank(vblank),
+        .HSync(hs),
+        .VSync(vs),
+
+        .fx(status[5:3]),
+        .no_rotate(status[2])
 );
 
 wire [10:0] audio;
@@ -232,17 +243,10 @@ assign AUDIO_L = {audio, 5'b00000};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
 
-reg initReset_n = 0;
-always @(posedge clk_sys) begin
-	reg old_download;
-	old_download <= ioctl_download;
-	if(old_download & ~ioctl_download) initReset_n <= 1;
-end
-
 xevious xevious
 (
 	.clock_18(clk_sys),
-	.reset(RESET | status[0] | status[6] | buttons[1] | ~initReset_n),
+	.reset(RESET | status[0] | buttons[1] |ioctl_download),
 
 	.dn_addr(ioctl_addr[16:0]),
 	.dn_data(ioctl_dout),
@@ -261,9 +265,9 @@ xevious xevious
 
 	.b_test(1),
 	.b_svce(1), 
-	.coin(m_coin),
-	.start1(m_start1),
-	.start2(m_start2),
+	.coin(m_coin|btn_coin_1|btn_coin_2),
+	.start1(m_start1|btn_start_1),
+	.start2(m_start2|btn_start_2),
 	.up(m_up),
 	.down(m_down),
 	.left(m_left),
