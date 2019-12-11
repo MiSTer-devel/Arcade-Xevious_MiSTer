@@ -29,7 +29,7 @@ module emu
 	input         RESET,
 
 	//Must be passed to hps_io module
-	inout  [44:0] HPS_BUS,
+	inout  [45:0] HPS_BUS,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        VGA_CLK,
@@ -44,6 +44,7 @@ module emu
 	output        VGA_HS,
 	output        VGA_VS,
 	output        VGA_DE,    // = ~(VBlank | HBlank)
+	output        VGA_F1,
 
 	//Base video clock. Usually equals to CLK_SYS.
 	output        HDMI_CLK,
@@ -74,9 +75,21 @@ module emu
 
 	output [15:0] AUDIO_L,
 	output [15:0] AUDIO_R,
-	output        AUDIO_S    // 1 - signed audio samples, 0 - unsigned
+	output        AUDIO_S,   // 1 - signed audio samples, 0 - unsigned
+	
+	// Open-drain User port.
+	// 0 - D+/RX
+	// 1 - D-/TX
+	// 2..6 - USR2..USR6
+	// Set USER_OUT to 1 to read from USER_IN.
+	input   [6:0] USER_IN,
+	output  [6:0] USER_OUT
+	
+	
 );
 
+assign VGA_F1    = 0;
+assign USER_OUT  = '1;
 assign LED_USER  = ioctl_download;
 assign LED_DISK  = 0;
 assign LED_POWER = 0;
@@ -94,11 +107,22 @@ localparam CONF_STR = {
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"-;",
 // LOOK AT GALAGA
+	"O89,Lives,3,1,2,5;",
+	"OAB,Difficulty,Normal,Easy,Hard,Hardest;",
+	"OC,Cabinet,Upright,Cocktail;",
+	"OG,Flags Award Bonus Life,Yes,No;",
+	//"ODF,ShipBonus,30k80kOnly/30kOnly,20k60kOnly/30k150kOnly,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k8k8k/3k15k10k,3k10k10k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k;",
 	"-;",
 	"R0,Reset;",
 	"J1,Fire,Bomb,Start 1P,Start 2P;",
 	"V,v",`BUILD_DATE
 };
+wire [7:0]dip_switch_a = { status[12],~status[9],~status[8],5'b11111};
+wire [7:0]dip_switch_b = { 1'b1,~status[11:10],~m_bomb_2,2'b00,~status[16],~m_bomb};
+//wire [7:0]dip_switch_a = { 8'b11111111};
+//wire [7:0]dip_switch_b = { 7'b1110001,~m_bomb};
+//dip_switch_a <= "11111111"; -- | cabinet(1) | lives(2)| bonus life(3) | coinage A(2) |
+//dip_switch_b <= "1110001" & not bomb; -- |freeze(1)| difficulty(2)| input B(1) | coinage B (2) | Flags bonus life (1) | input A (1) |
 
 ////////////////////   CLOCKS   ///////////////////
 
@@ -133,6 +157,9 @@ wire [10:0] ps2_key;
 wire [15:0] joystick_0, joystick_1;
 wire [15:0] joy = joystick_0 | joystick_1;
 
+wire [21:0] gamma_bus;
+
+
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -142,7 +169,8 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.buttons(buttons),
 	.status(status),
-        .forced_scandoubler(forced_scandoubler),
+	.forced_scandoubler(forced_scandoubler),
+	.gamma_bus(gamma_bus),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_wr(ioctl_wr),
@@ -176,6 +204,17 @@ always @(posedge clk_sys) begin
 			'h01E: btn_start_2     <= pressed; // 2
 			'h02E: btn_coin_1      <= pressed; // 5
 			'h036: btn_coin_2      <= pressed; // 6
+			// JPAC/IPAC/MAME Style Codes
+			'h016: btn_start_1     <= pressed; // 1
+			'h01E: btn_start_2     <= pressed; // 2
+			'h02E: btn_coin_1      <= pressed; // 5
+			'h036: btn_coin_2      <= pressed; // 6
+			'h02D: btn_up_2        <= pressed; // R
+			'h02B: btn_down_2      <= pressed; // F
+			'h023: btn_left_2      <= pressed; // D
+			'h034: btn_right_2     <= pressed; // G
+			'h01C: btn_fire_2      <= pressed; // A
+			'h01B: btn_bomb_2      <= pressed; // S
 		endcase
 	end
 end
@@ -193,6 +232,20 @@ reg btn_start_1=0;
 reg btn_start_2=0;
 reg btn_coin_1=0;
 reg btn_coin_2=0;
+reg btn_up_2=0;
+reg btn_down_2=0;
+reg btn_left_2=0;
+reg btn_right_2=0;
+reg btn_fire_2=0;
+reg btn_bomb_2=0;
+
+
+wire m_up_2     = status[2] ? btn_left_2  | joy[1] : btn_up_2    | joy[3];
+wire m_down_2   = status[2] ? btn_right_2 | joy[0] : btn_down_2  | joy[2];
+wire m_left_2   = status[2] ? btn_down_2  | joy[2] : btn_left_2  | joy[1];
+wire m_right_2  = status[2] ? btn_up_2    | joy[3] : btn_right_2 | joy[0];
+wire m_fire_2  = btn_fire_2|joy[4];
+wire m_bomb_2   = btn_bomb_2 | joy[5];
 
 
 wire m_up     = status[2] ? btn_left  | joy[1] : btn_up    | joy[3];
@@ -212,12 +265,21 @@ wire hs, vs;
 wire rde, rhs, rvs;
 wire [3:0] r,g,b;
 
+/*
 reg ce_pix;
 always @(posedge clk_24) begin
 	reg old_clk;
 	
 	old_clk <= ce_vid;
 	ce_pix <= old_clk & ~ce_vid;
+end
+*/
+reg ce_pix;
+always @(posedge clk_24) begin
+        reg [1:0] div;
+
+        div <= div + 1'd1;
+        ce_pix <= !div;
 end
 
 
@@ -273,7 +335,10 @@ xevious xevious
 	.left(m_left),
 	.right(m_right),
 	.fire(m_fire),
-	.bomb(m_bomb)
+	.bomb(m_bomb),
+	.dip_switch_a(dip_switch_a),
+	.dip_switch_b(dip_switch_b)
+
 );
 
 endmodule

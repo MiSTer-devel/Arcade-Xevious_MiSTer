@@ -148,6 +148,12 @@ port(
  blank_h        : out std_logic;
  blank_v        : out std_logic;
 
+ dip_switch_a  : in std_logic_vector (7 downto 0);
+ dip_switch_b  : in std_logic_vector (7 downto 0);
+ --dip_switch_a  : buffer std_logic_vector (7 downto 0);
+ --dip_switch_b  : buffer std_logic_vector (7 downto 0);
+
+ 
  audio          : out std_logic_vector(10 downto 0);
 
 -- ledr           : out std_logic_vector(17 downto 0);
@@ -300,8 +306,8 @@ architecture struct of xevious is
  
  --signal cs05XX_ctrl       : std_logic_vector( 5 downto 0);
  
- signal dip_switch_a  : std_logic_vector (7 downto 0);
- signal dip_switch_b  : std_logic_vector (7 downto 0);
+ --signal dip_switch_a  : std_logic_vector (7 downto 0);
+ -- signal dip_switch_b  : std_logic_vector (7 downto 0);
  signal dip_switch_do : std_logic_vector (1 downto 0);
  
  signal bg_code,bg_code_p : std_logic_vector( 7 downto 0);
@@ -420,8 +426,8 @@ reset_n   <= not reset;
 
 video_en  <= ena_vidgen;
 
-dip_switch_a <= "11111111"; -- | cabinet(1) | lives(2)| bonus life(3) | coinage A(2) |
-dip_switch_b <= "1110001" & not bomb; -- |freeze(1)| difficulty(2)| input B(1) | coinage B (2) | Flags bonus life (1) | input A (1) |
+--dip_switch_a <= "11111111"; -- | cabinet(1) | lives(2)| bonus life(3) | coinage A(2) |
+--dip_switch_b <= "1110001" & not bomb; -- |freeze(1)| difficulty(2)| input B(1) | coinage B (2) | Flags bonus life (1) | input A (1) |
 dip_switch_do <= 	dip_switch_a(to_integer(unsigned(ram_bus_addr(3 downto 0)))) & 
 									dip_switch_b(to_integer(unsigned(ram_bus_addr(3 downto 0))));
 									
