@@ -100,8 +100,6 @@ assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
 `include "build_id.v" 
 localparam CONF_STR = {
 	"A.XEVS;;",
-   "F,rom;", // allow loading of alternate ROMs
-	"-;",
 	"O1,Aspect Ratio,Original,Wide;",
 	"O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
@@ -109,7 +107,7 @@ localparam CONF_STR = {
 // LOOK AT GALAGA
 	"O89,Lives,3,1,2,5;",
 	"OAB,Difficulty,Normal,Easy,Hard,Hardest;",
-	"OC,Cabinet,Upright,Cocktail;",
+	//"OC,Cabinet,Upright,Cocktail;",
 	"OG,Flags Award Bonus Life,Yes,No;",
 	//"ODF,ShipBonus,30k80kOnly/30kOnly,20k60kOnly/30k150kOnly,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k8k8k/3k15k10k,3k10k10k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k;",
 	"-;",
