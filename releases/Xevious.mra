@@ -1,0 +1,25 @@
+<misterromdescription>
+  <rbf>Xevious</rbf>
+  <rom index="0" zip="xevious.zip" md5="1b707668eb52408088e47c0f823f9fed">
+        <part name="xvi_1.3p"/>
+        <part name="xvi_2.3m"/>
+        <part name="xvi_3.2m"/>
+        <part name="xvi_4.2l"/>
+        <part name="xvi_5.3f"/>
+        <part name="xvi_6.3j"/>
+        <part name="xvi_7.2c"/>
+        <part name="xvi_12.3b"/>
+        <part name="xvi_13.3c"/>
+        <part name="xvi_14.3d"/>
+        <part name="xvi_15.4m"/>
+        <part name="xvi_17.4p"/>
+        <part name="xvi_16.4n"/>
+        <part name="xvi_18.4r"/>
+        <part name="xvi_9.2a"/>
+        <part name="xvi_10.2b"/>
+        <part name="xvi_11.2c"/>
+        <part name="50xx.bin"/>
+        <part name="51xx.bin"/>
+        <part name="54xx.bin"/>
+  </rom>
+</misterromdescription>
