@@ -18,8 +18,8 @@
         <part name="xvi_9.2a"/>
         <part name="xvi_10.2b"/>
         <part name="xvi_11.2c"/>
-        <part name="50xx.bin"/>
-        <part name="51xx.bin"/>
-        <part name="54xx.bin"/>
+        <part zip="namco50.zip" name="50xx.bin"/>
+        <part zip="namco51.zip" name="51xx.bin"/>
+        <part zip="namco54.zip" name="54xx.bin"/>
   </rom>
 </misterromdescription>
