@@ -84,8 +84,6 @@ module emu
 	// Set USER_OUT to 1 to read from USER_IN.
 	input   [6:0] USER_IN,
 	output  [6:0] USER_OUT
-	
-	
 );
 
 assign VGA_F1    = 0;
@@ -107,12 +105,11 @@ localparam CONF_STR = {
 // LOOK AT GALAGA
 	"O89,Lives,3,1,2,5;",
 	"OAB,Difficulty,Normal,Easy,Hard,Hardest;",
-	//"OC,Cabinet,Upright,Cocktail;",
+// "OC,Cabinet,Upright,Cocktail;",
 	"OG,Flags Award Bonus Life,Yes,No;",
-//        "H0ODF,ShipBonus,30k80kOnly,20k20k80k,30k12k12k,20k60k60k,20k60kOnly,20k70k70k,30k100k100k,Nothing;",
-//       "H1ODF,ShipBonus,30kOnly,30k150k150k,30k120kOnly,30k100k100k,30k150kOnly,30k120k120k,30k100kOnly,Nothing;",
-
-	//"ODF,ShipBonus,30k80kOnly/30kOnly,20k60kOnly/30k150kOnly,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k8k8k/3k15k10k,3k10k10k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k;",
+// "ODF,ShipBonus,30k80kOnly,20k20k80k,30k12k12k,20k60k60k,20k60kOnly,20k70k70k,30k100k100k,Nothing;",
+// "ODF,ShipBonus,30kOnly,30k150k150k,30k120kOnly,30k100k100k,30k150kOnly,30k120k120k,30k100kOnly,Nothing;",
+// "ODF,ShipBonus,30k80kOnly/30kOnly,20k60kOnly/30k150kOnly,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k8k8k/3k15k10k,3k10k10k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k;",
 	"-;",
 	"R0,Reset;",
 	"J1,Fire,Bomb,Start 1P,Start 2P,Coin;",
@@ -120,7 +117,7 @@ localparam CONF_STR = {
 
 	"V,v",`BUILD_DATE
 };
-wire [7:0]dip_switch_a = { status[12],~status[9],~status[8],5'b11111};
+wire [7:0]dip_switch_a = { 1'b1,~status[9],~status[8],5'b11111};
 wire [7:0]dip_switch_b = { 1'b1,~status[11:10],~m_bomb_2,2'b00,~status[16],~m_bomb};
 //wire [7:0]dip_switch_a = { 8'b11111111};
 //wire [7:0]dip_switch_b = { 7'b1110001,~m_bomb};
@@ -164,7 +161,6 @@ wire [15:0] joy = joystick_0 | joystick_1;
 
 wire [21:0] gamma_bus;
 
-
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
 	.clk_sys(clk_sys),
@@ -172,12 +168,12 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 
 	.conf_str(CONF_STR),
 
-        .buttons(buttons),
-        .status(status),
-        .status_menumask(direct_video),
-        .forced_scandoubler(forced_scandoubler),
-        .gamma_bus(gamma_bus),
-        .direct_video(direct_video),
+	.buttons(buttons),
+	.status(status),
+	.status_menumask(direct_video),
+	.forced_scandoubler(forced_scandoubler),
+	.gamma_bus(gamma_bus),
+	.direct_video(direct_video),
 
 	.ioctl_download(ioctl_download),
 	.ioctl_wr(ioctl_wr),
@@ -204,8 +200,8 @@ always @(posedge clk_sys) begin
 			'h029: btn_fire        <= pressed; // space
 			'hX14: btn_bomb        <= pressed; // ctrl
 
-			'h005: btn_one_player  <= pressed; // F1
-			'h006: btn_two_players <= pressed; // F2
+			'h005: btn_start_1     <= pressed; // F1
+			'h006: btn_start_2     <= pressed; // F2
 			// JPAC/IPAC/MAME Style Codes
 			'h016: btn_start_1     <= pressed; // 1
 			'h01E: btn_start_2     <= pressed; // 2
@@ -226,47 +222,41 @@ always @(posedge clk_sys) begin
 	end
 end
 
-reg btn_up    = 0;
-reg btn_down  = 0;
-reg btn_right = 0;
-reg btn_left  = 0;
-reg btn_fire  = 0;
-reg btn_bomb  = 0;
-reg btn_one_player  = 0;
-reg btn_two_players = 0;
-
+reg btn_up     =0;
+reg btn_down   =0;
+reg btn_right  =0;
+reg btn_left   =0;
+reg btn_fire   =0;
+reg btn_bomb   =0;
 reg btn_start_1=0;
 reg btn_start_2=0;
-reg btn_coin_1=0;
-reg btn_coin_2=0;
-reg btn_up_2=0;
-reg btn_down_2=0;
-reg btn_left_2=0;
+reg btn_coin_1 =0;
+reg btn_coin_2 =0;
+reg btn_up_2   =0;
+reg btn_down_2 =0;
+reg btn_left_2 =0;
 reg btn_right_2=0;
-reg btn_fire_2=0;
-reg btn_bomb_2=0;
+reg btn_fire_2 =0;
+reg btn_bomb_2 =0;
 
-wire no_rotate = status[2] & ~direct_video;
+wire no_rotate = status[2] | direct_video;
 
+wire m_up_2    = btn_up_2    | joy[3];
+wire m_down_2  = btn_down_2  | joy[2];
+wire m_left_2  = btn_left_2  | joy[1];
+wire m_right_2 = btn_right_2 | joy[0];
+wire m_fire_2  = btn_fire_2  | joy[4];
+wire m_bomb_2  = btn_bomb_2  | joy[5];
+wire m_up      = btn_up      | joy[3];
+wire m_down    = btn_down    | joy[2];
+wire m_left    = btn_left    | joy[1];
+wire m_right   = btn_right   | joy[0];
+wire m_fire    = btn_fire    | joy[4];
+wire m_bomb    = btn_bomb    | joy[5];
 
-wire m_up_2     = no_rotate ? btn_left_2  | joy[1] : btn_up_2    | joy[3];
-wire m_down_2   = no_rotate ? btn_right_2 | joy[0] : btn_down_2  | joy[2];
-wire m_left_2   = no_rotate ? btn_down_2  | joy[2] : btn_left_2  | joy[1];
-wire m_right_2  = no_rotate ? btn_up_2    | joy[3] : btn_right_2 | joy[0];
-wire m_fire_2  = btn_fire_2|joy[4];
-wire m_bomb_2   = btn_bomb_2 | joy[5];
-
-
-wire m_up     = no_rotate ? btn_left  | joy[1] : btn_up    | joy[3];
-wire m_down   = no_rotate ? btn_right | joy[0] : btn_down  | joy[2];
-wire m_left   = no_rotate ? btn_down  | joy[2] : btn_left  | joy[1];
-wire m_right  = no_rotate ? btn_up    | joy[3] : btn_right | joy[0];
-wire m_fire   = btn_fire | joy[4];
-wire m_bomb   = btn_bomb | joy[5];
-
-wire m_start1 = btn_one_player  | joy[6];
-wire m_start2 = btn_two_players | joy[7];
-wire m_coin   = m_start1 | m_start2 | joy[8];
+wire m_start1 = btn_start_1  | joy[6];
+wire m_start2 = btn_start_2  | joy[7];
+wire m_coin   = btn_coin_1 | btn_coin_2 | joy[8];
 
 wire hblank, vblank;
 wire ce_vid;
@@ -276,27 +266,24 @@ wire [3:0] r,g,b;
 
 reg ce_pix;
 always @(posedge clk_48) begin
-        reg [2:0] div;
-
-        div <= div + 1'd1;
-        ce_pix <= !div;
+	reg [2:0] div;
+	div <= div + 1'd1;
+	ce_pix <= !div;
 end
 
-
-arcade_rotate_fx #(288,224,12) arcade_video
-//arcade_rotate_fx #(576,224,9) arcade_video
+arcade_video #(288,224,12) arcade_video
 (
-        .*,
+	.*,
 
-        .clk_video(clk_48),
-        .RGB_in({r,g,b}),
-        .HBlank(hblank),
-        .VBlank(vblank),
-        .HSync(hs),
-        .VSync(vs),
+	.clk_video(clk_48),
+	.RGB_in({r,g,b}),
+	.HBlank(hblank),
+	.VBlank(vblank),
+	.HSync(hs),
+	.VSync(vs),
 
 	.rotate_ccw(0),
-        .fx(status[5:3]),
+	.fx(status[5:3])
 );
 
 wire [10:0] audio;
@@ -307,7 +294,7 @@ assign AUDIO_S = 0;
 xevious xevious
 (
 	.clock_18(clk_sys),
-	.reset(RESET | status[0] | buttons[1] |ioctl_download),
+	.reset(RESET | status[0] | buttons[1]),
 
 	.dn_addr(ioctl_addr[16:0]),
 	.dn_data(ioctl_dout),
@@ -326,9 +313,9 @@ xevious xevious
 
 	.b_test(1),
 	.b_svce(1), 
-	.coin(m_coin|btn_coin_1|btn_coin_2),
-	.start1(m_start1|btn_start_1),
-	.start2(m_start2|btn_start_2),
+	.coin(m_coin),
+	.start1(m_start1),
+	.start2(m_start2),
 	.up(m_up),
 	.down(m_down),
 	.left(m_left),
@@ -337,7 +324,6 @@ xevious xevious
 	.bomb(m_bomb),
 	.dip_switch_a(dip_switch_a),
 	.dip_switch_b(dip_switch_b)
-
 );
 
 endmodule
