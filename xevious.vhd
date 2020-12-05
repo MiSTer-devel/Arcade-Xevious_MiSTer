@@ -63,7 +63,7 @@
 --    external device have to have a 55ns max access time. Of course big enough FPGA may directly implement these data bank without
 --    requiring external device. It is to notice that 55ns will be not so easy to reach with Flash or SDRAM memories.    
 
---  Xevious Hardware caracteristics :
+--  Xevious Hardware characteristics :
 --
 --    3xZ80 CPU accessing each own program rom and shared ram/devices
 --      16Ko program for CPU1
@@ -451,20 +451,20 @@ audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000"
 --
 --       hcnt   |          0         |            1             |          2          |            3             |
 --       slot   |   0  |   1  |   2  |    3   |   4    |   5    |   0   |   1  |   2  |    3   |   4    |   5    |
---       slot16 |   0  |   1  |   2  |    3   |   4    |   5    |   6   |   7  |   8  |    9   |  10    |  11    |
+--       slot24 |   0  |   1  |   2  |    3   |   4    |   5    |   6   |   7  |   8  |    9   |  10    |  11    |
 -- ram   access | cpu1 | cpu2 | cpu3 | fg ram | sp ram | sp ram |  cpu1 | cpu2 | cpu3 | bg ram | sp ram | sp ram |
 -- rom   access | cpu1 | cpu2 | cpu3 | sp gfx0| sp gfx1| fg gfx |  cpu1 | cpu2 | cpu3 | sp gfx0| sp gfx1| bg gfx0|
 -- sound access | cpu1 | cpu2 | cpu3 | sndram | n.u.   | sndram |  cpu1 | cpu2 | cpu3 | sndram | n.u.   | sndram |
 
 --       hcnt   |          4         |            5             |          6          |            7             |
 --       slot   |   0  |   1  |   2  |    3   |   4    |   5    |   0   |   1  |   2  |    3   |   4    |   5    |
---       slot16 |  12  |  13  |  14  |   15   |  16    |  17    |  18   |  19  |  20  |   21   |  22    |  23    |
+--       slot24 |  12  |  13  |  14  |   15   |  16    |  17    |  18   |  19  |  20  |   21   |  22    |  23    |
 -- ram   access | cpu1 | cpu2 | cpu3 |    x   | sp ram | sp ram |  cpu1 | cpu2 | cpu3 |    x   | sp ram | sp ram |
 -- rom   access | cpu1 | cpu2 | cpu3 | sp gfx0| sp gfx1| bg gfx1|  cpu1 | cpu2 | cpu3 | sp gfx0| sp gfx1|   x    |
 -- sound access | cpu1 | cpu2 | cpu3 | sndram | n.u.   | sndram |  cpu1 | cpu2 | cpu3 | sndram | n.u.   | sndram |
 
 
--- remenber that enable signals are one slot early
+-- remember that enable signals are one slot early
 
 process (clock_18, hcnt)
 begin 
@@ -991,7 +991,7 @@ code_ram_we  <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 12) = "1100
 port_we      <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 12) = "1101"  else '0'; -- x/y scroll offset, flip general
 terrain_we   <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 12) = "1111"  else '0'; -- bs0/1
 
--- manage irq reset/enable, cpu1 and 2 reset, namco custom chips, misc. lacthes/registers
+-- manage irq reset/enable, cpu1 and 2 reset, namco custom chips, misc. latches/registers
 process (reset, clock_18n, io_we) 
 	variable cs06XX_nmi_cnt : natural range 0 to 10000;
 begin
