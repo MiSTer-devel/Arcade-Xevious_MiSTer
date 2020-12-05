@@ -274,6 +274,7 @@ architecture struct of xevious is
 -- signal cs54XX_cmd        : std_logic_vector( 3 downto 0);
 -- signal cs54XX_do         : std_logic_vector( 7 downto 0);
  
+ signal cs54xx_cnt      : std_logic_vector(6 downto 0);
  signal cs54xx_ena      : std_logic;
  signal cs5Xxx_rw       : std_logic;
  
@@ -468,8 +469,9 @@ audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000"
 process (clock_18, hcnt)
 begin 
 	if rising_edge(clock_18) then
-		slot24  <= slot24 + "00001";
-		slot    <= slot + "001";
+		slot24      <= slot24 + "00001";
+		slot        <= slot + "001";
+		cs54xx_cnt  <= cs54xx_cnt + "0000001";
 
 		if slot = "101" then
 			if (hcnt(2 downto 0) = "111") then slot24 <= (others=>'0'); end if;
@@ -479,6 +481,8 @@ begin
 				slot   <= "011"; -- ensure slot and hcnt well synchronised
 			end if;
 		end if;
+
+		if cs54xx_cnt = "1001000" then cs54xx_cnt <= "0000000"; end if;
 	end if;
 end process;
 
@@ -509,7 +513,7 @@ begin
 	if slot = "000" then cpu2_ena <= '1';	end if;	
 	if slot = "001" then cpu3_ena <= '1';	end if;
 		
-	if slot24 = "00000" then cs54xx_ena <= '1';	end if;	 
+	if cs54xx_cnt = "0000000" then cs54xx_ena <= '1'; end if;
 --	if slot24 = "00000" or slot24 = "01100" then cs54xx_ena <= '1';	end if;	 
 --	if slot = "000" or slot = "011" then cs54xx_ena <= '1';	end if;	 
 	
