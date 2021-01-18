@@ -214,11 +214,11 @@ hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 	.joystick_1(joystick_1)
 );
 
-wire m_up_2    = joy[3];
-wire m_down_2  = joy[2];
-wire m_left_2  = joy[1];
-wire m_right_2 = joy[0];
-wire m_fire_2  = joy[4];
+//wire m_up_2    = joy[3];
+//wire m_down_2  = joy[2];
+//wire m_left_2  = joy[1];
+//wire m_right_2 = joy[0];
+//wire m_fire_2  = joy[4];
 wire m_bomb_2  = joy[5];
 wire m_up      = joy[3];
 wire m_down    = joy[2];
