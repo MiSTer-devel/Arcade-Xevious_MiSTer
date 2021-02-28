@@ -17,6 +17,8 @@
 -- Do not redistribute roms whatever the form
 -- Use at your own risk
 ---------------------------------------------------------------------------------
+-- Version 0.4 -- 28/02/2021
+--             Fixed start when credit equal 0
 -- Version 0.3 -- 28/02/2017
 --             Fixed cs54xx audio 2 (mb88 JMP instruction fixed)
 --
@@ -1203,13 +1205,14 @@ begin
 		if cs51XX_credit_mode = '1' then
 			  -- decreasing credit by 1 will start a new game for 1 player
 			if (start1 = '0' and start1_r = '1') then
-				cs51XX_credit_mode <= '0';
 				if credit_bcd_0 = "0000" then 
 					if credit_bcd_1 /= "0000" then
+						cs51XX_credit_mode <= '0';
 						credit_bcd_1 <= credit_bcd_1 - "0001";
 						credit_bcd_0 <= "1001";
 					end if;
 				else
+					cs51XX_credit_mode <= '0';
 					credit_bcd_0 <= credit_bcd_0 - "0001";
 				end if; 		
 			end if;
