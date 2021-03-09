@@ -411,6 +411,9 @@ architecture struct of xevious is
  signal coin_r   : std_logic;
  signal start1_r : std_logic;
  signal start2_r : std_logic;
+ signal fire_r   : std_logic;
+ signal fire_impulse : std_logic;
+ signal fire_impulse_trig : std_logic;
 
  signal buttons  : std_logic_vector(3 downto 0);
  signal joy      : std_logic_vector(3 downto 0);
@@ -1273,9 +1276,31 @@ cs51XX_switch_mode_do <= 	not (left & '0' & right & '0' & left & '0' & right & '
 -- non swicth mode reply with respect to reply rank
 with cs51XX_data_cnt select
 cs51XX_non_switch_mode_do <= 	credit_bcd_1 & credit_bcd_0 when "00", -- credits (cpu spy this to start a new game)
-															"00" & not fire & '1' & joy when "01",
+															"00" & not fire & not fire_impulse & joy when "01",
 															X"38" when "10",
 															X"00" when "11"; -- N.U.	
+
+-- fire trigger fire_impulse for 1 frame 
+process (clock_18, fire) 
+begin
+	if rising_edge(clock_18) then
+		
+		fire_r <= fire;
+		
+		if fire_r = '0' and fire = '1' then
+			fire_impulse_trig <= '1';
+		end if;
+		
+		if vcnt = "000000000" and hcnt = "100000000" and ena_vidgen = '1' then
+			fire_impulse <= '0';
+			if fire_impulse_trig = '1' then
+				fire_impulse_trig <= '0';
+				fire_impulse <= '1';
+			end if;
+		end if;
+		
+	end if;
+end process;
 															
 -- N.U. (galaga configuration)
 --cs51XX_non_switch_mode_do <= 	credit_bcd_1 & credit_bcd_0 when "00", -- credits (cpu spy this)
