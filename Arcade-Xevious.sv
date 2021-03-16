@@ -255,7 +255,7 @@ reg [31:0]		pause_timer_dim = 31'h7270E00;	// Time until screen dim (10 seconds 
 
 assign pause = pause_toggle;
 
-always @(posedge clk_sys) begin
+always @(negedge clk_48) begin
 	// User pause toggle
 	reg old_pause;
 	old_pause <= m_pause;
