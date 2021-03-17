@@ -140,7 +140,6 @@ port(
  video_r        : out std_logic_vector(3 downto 0);
  video_g        : out std_logic_vector(3 downto 0);
  video_b        : out std_logic_vector(3 downto 0);
- video_clk      : out std_logic;
  video_csync    : out std_logic;
  video_blankn   : out std_logic;
  video_hs       : out std_logic;
@@ -171,7 +170,14 @@ port(
  left           : in std_logic;
  right          : in std_logic;
  fire           : in std_logic;
- bomb           : in std_logic
+ bomb           : in std_logic;
+ 
+ pause          : in std_logic;
+
+ hs_address     : in  std_logic_vector(10 downto 0);
+ hs_data_out    : out std_logic_vector(7 downto 0);
+ hs_data_in     : in  std_logic_vector(7 downto 0);
+ hs_write       : in std_logic
  );
 end xevious;
 
@@ -933,7 +939,7 @@ end process;
 sound_machine : entity work.sound_machine
 port map(
 clock_18  => clock_18,
-ena       => ena_snd_machine,
+ena       => ena_snd_machine and not pause,
 hcnt      => hcnt_r(5 downto 0),
 cpu_addr  => ram_bus_addr(3 downto 0), 
 cpu_do    => mux_cpu_do(3 downto 0), 
@@ -1402,7 +1408,7 @@ port map(
   RESET_n => reset_n,
   CLK_n   => clock_18,
 	CLKEN   => cpu1_ena,
-  WAIT_n  => '1',
+  WAIT_n  => not pause,
   INT_n   => cpu1_irq_n,
   NMI_n   => cpu1_nmi_n,
   BUSRQ_n => '1',
@@ -1452,7 +1458,7 @@ port map(
   RESET_n => reset_cpu_n,
   CLK_n   => clock_18,
 	CLKEN   => cpu3_ena,
-  WAIT_n  => '1',
+  WAIT_n  => not pause,
   INT_n   => '1',
   NMI_n   => cpu3_nmi_n,
   BUSRQ_n => '1',
@@ -1659,15 +1665,22 @@ port map(
  q    => wram0_do
 );
 -- working/sprite register RAM1   0x8000-0x87FF / 0x8800-0x8FFF
-wram1 : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 11)
+wram1 : entity work.dpram
+generic map(11,8)
 port map(
- clk  => clock_18n,
- we   => wram1_we,
- addr => ram_bus_addr(10 downto 0),
- d    => mux_cpu_do,
- q    => wram1_do
+ clock_a   => clock_18n,
+ wren_a    => wram1_we,
+ address_a => ram_bus_addr(10 downto 0),
+ data_a    => mux_cpu_do,
+ q_a       => wram1_do,
+ 
+ clock_b   => clock_18,
+ wren_b    => hs_write,
+ address_b => hs_address(10 downto 0),
+ data_b    => hs_data_in,
+ q_b       => hs_data_out
 );
+
 -- working/sprite register RAM2   0x9000-0x97FF / 0x9800-0x9FFF
 wram2 : entity work.gen_ram
 generic map( dWidth => 8, aWidth => 11)
