@@ -442,11 +442,9 @@ reset_n   <= not reset;
 
 video_en  <= ena_vidgen;
 
---dip_switch_a <= "11111111"; -- | cabinet(1) | lives(2)| bonus life(3) | coinage A(2) |
---dip_switch_b <= "1110001" & not bomb; -- |freeze(1)| difficulty(2)| input B(1) | coinage B (2) | Flags bonus life (1) | input A (1) |
-dip_switch_do <= 	dip_switch_a(to_integer(unsigned(ram_bus_addr(3 downto 0)))) & 
+dip_switch_do <= 	dip_switch_a(to_integer(unsigned(ram_bus_addr(3 downto 0)))) &
 									dip_switch_b(to_integer(unsigned(ram_bus_addr(3 downto 0))));
-									
+
 audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000" )+ ('0'&snd_audio);
 --audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ('0'&snd_audio);
 --audio <= ('0'&snd_audio);

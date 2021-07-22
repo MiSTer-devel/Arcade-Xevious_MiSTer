@@ -205,14 +205,7 @@ localparam CONF_STR = {
 	"H0O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"-;",
-// LOOK AT GALAGA
-	"O89,Lives,3,1,2,5;",
-	"OAB,Difficulty,Normal,Easy,Hard,Hardest;",
-// "OC,Cabinet,Upright,Cocktail;",
-	"OG,Flags Award Bonus Life,Yes,No;",
-// "ODF,ShipBonus,30k80kOnly,20k20k80k,30k12k12k,20k60k60k,20k60kOnly,20k70k70k,30k100k100k,Nothing;",
-// "ODF,ShipBonus,30kOnly,30k150k150k,30k120kOnly,30k100k100k,30k150kOnly,30k120k120k,30k100kOnly,Nothing;",
-// "ODF,ShipBonus,30k80kOnly/30kOnly,20k60kOnly/30k150kOnly,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k8k8k/3k15k10k,3k10k10k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k,2k6k6k/3k10k10k,2k7k7k/3k12k12k;",
+	"DIP;",
 	"-;",
 	"H1OR,Autosave Hiscores,Off,On;",
 	"P1,Pause options;",
@@ -225,12 +218,11 @@ localparam CONF_STR = {
 
 	"V,v",`BUILD_DATE
 };
-wire [7:0]dip_switch_a = { 1'b1,~status[9],~status[8],5'b11111};
-wire [7:0]dip_switch_b = { 1'b1,~status[11:10],~m_bomb_2,2'b00,~status[16],~m_bomb};
-//wire [7:0]dip_switch_a = { 8'b11111111};
-//wire [7:0]dip_switch_b = { 7'b1110001,~m_bomb};
-//dip_switch_a <= "11111111"; -- | cabinet(1) | lives(2)| bonus life(3) | coinage A(2) |
-//dip_switch_b <= "1110001" & not bomb; -- |freeze(1)| difficulty(2)| input B(1) | coinage B (2) | Flags bonus life (1) | input A (1) |
+
+reg [7:0] dsw[2];
+always @(posedge clk_sys)
+	if (ioctl_wr && (ioctl_index==254) && !ioctl_addr[24:1])
+		dsw[ioctl_addr[0]] <= ~ioctl_dout;
 
 ////////////////////   CLOCKS   ///////////////////
 
@@ -399,8 +391,8 @@ xevious xevious
 	.right(m_right),
 	.fire(m_fire),
 	.bomb(m_bomb),
-	.dip_switch_a(dip_switch_a),
-	.dip_switch_b(dip_switch_b),
+	.dip_switch_a(dsw[0]),
+	.dip_switch_b({dsw[1][7:5], ~m_bomb_2, dsw[1][3:1], ~m_bomb}),
 
 	.pause(pause_cpu),
 
