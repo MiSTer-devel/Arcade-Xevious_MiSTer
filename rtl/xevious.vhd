@@ -149,12 +149,13 @@ port(
  blank_h        : out std_logic;
  blank_v        : out std_logic;
 
- dip_switch_a  : in std_logic_vector (7 downto 0);
- dip_switch_b  : in std_logic_vector (7 downto 0);
- --dip_switch_a  : buffer std_logic_vector (7 downto 0);
- --dip_switch_b  : buffer std_logic_vector (7 downto 0);
+ dip_switch_a   : in std_logic_vector (7 downto 0);
+ dip_switch_b   : in std_logic_vector (7 downto 0);
 
- 
+ flip           : in std_logic;
+ h_offset	: in signed(3 downto 0);
+ v_offset	: in signed(3 downto 0);
+
  audio          : out std_logic_vector(10 downto 0);
 
 -- ledr           : out std_logic_vector(17 downto 0);
@@ -190,6 +191,9 @@ architecture struct of xevious is
  signal slot            : std_logic_vector(2 downto 0) := (others => '0');
  signal hcnt            : std_logic_vector(8 downto 0);
  signal vcnt            : std_logic_vector(8 downto 0);
+ signal hflip           : std_logic_vector(8 downto 0);
+ signal vflip           : std_logic_vector(8 downto 0);
+ signal bg_mask         : std_logic_vector(8 downto 0);
  signal ena_vidgen      : std_logic;
  signal ena_snd_machine : std_logic;
  signal ena_sprite      : std_logic;
@@ -531,6 +535,10 @@ begin
  end if;
 end process;
 
+hflip <= hcnt when flip = '0' else 367 - hcnt;
+vflip <= vcnt when flip = '0' else not vcnt;
+bg_mask <= "000000000" when flip = '1' else "000000111";
+
 --- SPRITES MACHINE ---
 -----------------------
 -- Sprite machine makes use of two video memory lines. Read and write process are toggled every other line.
@@ -554,27 +562,27 @@ end process;
 --     'new' written color is not transparent color then the 'new' color replace the 'previous'
 --     written color. Highest priority sprites are the latest to be written (CPU take care of this point)
 --   * go to next sprite until the last one
---   
+--
 -- Shadow memory filled during one video line is read and displayed on the next line (CPU take care
 -- of this point). After each pixel read, the memory data is cleaned so that the written process will
 -- get a 'fresh empty' memory space (unlike the write process which only writes data where sprites are,
 -- the read process will read and clean the entire memory line)
 
 -- sprite registers content
---                                      |            even address          | - |    odd address   |	
+--                                      |            even address          | - |    odd address   |
 -- wram1 : 0x8xxx - 0x8FFF : 64 sprites |                 pos v            | - |     pos h lsb    |
--- wram2 : 0x9xxx - 0x9FFF : 64 sprites |code msb|xxx|flip v|flip h|2xV|2xH| - |xxxxxxx|pos h  msb|  
+-- wram2 : 0x9xxx - 0x9FFF : 64 sprites |code msb|xxx|flip v|flip h|2xV|2xH| - |xxxxxxx|pos h  msb|
 -- wram3 : 0xAxxx - 0xAFFF : 64 sprites |                 code             | - |x|ena|   color    |
 
 sp_scan_addr <= sprite_num & sprite_state(0); -- toggle odd/even wram address, valid when sprite_state = "000" or "001"
-sp_line      <= wram1_do + vcnt(7 downto 0);  -- wram1_do = sprite vertical position when sprite_state = "000" 
---sp_line <= X"B0" + vcnt(7 downto  0); -- dbg
+sp_line <= wram1_do + vflip(7 downto 0) + (flip & '0');
+
 
 process (clock_18, ena_sprite)
 begin
- if rising_edge(clock_18) then 
-  -- restart start machine at begining of line, start with the first sprite
-	if hcnt = std_logic_vector(to_unsigned(128,9)) then
+ if rising_edge(clock_18) then
+  -- restart start machine at beginning of line, start with the first sprite
+	if hcnt = std_logic_vector(to_unsigned(128,9)) + flip then
 		sprite_num   <= "000000";
 		sprite_state <= "000";
 		sp_ram_rd_addr<= "111110000";
@@ -609,7 +617,17 @@ begin
 	-- prepare sprite_hcnt to get first grpahics data (2 or 4 differents graphics may be used for one video line)
 	if ena_sprite = '1' and sprite_state = "001" then
 		sprite_color   <= wram3_do;
-		sp_ram_wr_addr <= wram2_do(0) & wram1_do; -- pos h
+		-- set sprite horizontal position depending on the flip screen state and sprite size
+		if flip = '0' then
+			sp_ram_wr_addr <= wram2_do(0) & wram1_do; -- pos h
+		else
+			if sprite_attr(0) = '0' then
+				sp_ram_wr_addr <= 351 - (wram2_do(0) & wram1_do); -- pos h inverted for size H x 1
+			else
+				sp_ram_wr_addr <= 335 - (wram2_do(0) & wram1_do); -- pos h inverted for size H x 2
+
+			end if;
+		end if;
 		sprite_hcnt    <= "00000";
 		sprite_state   <= "010";
 	end if;
@@ -695,7 +713,7 @@ sp_ram2_we <= sp_ram_we when vcnt(0) = '0' else sp_ram_clr;
 -- build sprite code from both parts
 sp_code_ext  <= '0'&sprite_code when sprite_attr(7) = '0' else "100"&sprite_code(5 downto 0);
 -- prepare flip masks
-spflip_H <= sprite_attr(2) xor flip_h; spflip_2H <= spflip_H & spflip_H;
+spflip_H <= sprite_attr(2) xor (flip_h xor flip); spflip_2H <= spflip_H & spflip_H;
 spflip_V <= sprite_attr(3); spflip_2V <= spflip_V & spflip_V;
 -- finish preparing flip mask from flip attribute (flip v, flip h) and with respect to sprite size (2xV, 2xH)
 with sprite_attr(1 downto 0) select
@@ -728,31 +746,25 @@ with sprite_color(6) select
 -- to avoid horizontal shrink
 process (clock_18, slot24)
 begin
- if rising_edge(clock_18) and vcnt = "000000000" then 
-
---  bg_offset_h  <= "111110000";--sw(8 downto 0); -- dbg
---  bg_offset_v  <= "001000000";--sw(17 downto 9); -- dbg
---  fg_offset_h  <= "111110000";--sw(8 downto 0); -- dbg
---  fg_offset_v  <= "001000000";--sw(17 downto 9); -- dbg
-	
-		bg_offset_hs <= bg_offset_h + ('1'&X"6C"); --sw(8 downto 0);--('1'&X"6B"); -- dbg
-		bg_offset_vs <= bg_offset_v + ('0'&X"FE"); --sw(17 downto 9);--('0'&X"FE"); -- dbg
- end if;
+	if rising_edge(clock_18) and vcnt = "000000000" then
+		bg_offset_hs <= bg_offset_h + ('1'&X"6C") - flip;
+		bg_offset_vs <= bg_offset_v + ('0'&X"FE");
+	end if;
 end process;
 
 -- set bg/fg scan tile ram address with respect to h/v video counter and h/v offset.
 -- for horizontal offset only 6 msb (8-3) are used to get synchronized with 8 pixels addressing process.
--- for background the 3 lsb (2-0) will be use to control a shift register to finish horizontal scrolling. 
--- even in original there is no provision to finish horizontal scrolling for foreground. 
-bg_scan_h    <= hcnt + (bg_offset_hs(8 downto 3) & "000");
-bg_scan_v    <= vcnt +  bg_offset_vs;
+-- for background the 3 lsb (2-0) will be use to control a shift register to finish horizontal scrolling.
+-- even in original there is no provision to finish horizontal scrolling for foreground.
+bg_scan_h    <= hflip + 264 + (bg_offset_hs(8 downto 3) & "000") when flip = '1' else hcnt + (bg_offset_hs(8 downto 3) & "000");
+bg_scan_v    <= vflip - bg_offset_vs when flip = '1' else vcnt +  bg_offset_vs;
 bg_scan_addr <= bg_scan_v(7 downto 3) & bg_scan_h(8 downto 3);
 
-fg_offset_hs <= fg_offset_h + ('1'&X"77"); --sw(8 downto 0);--('1'&X"77"); -- dbg
-fg_offset_vs <= fg_offset_v + ('0'&X"00"); --sw(17 downto 9);--('0'&X"00"); -- dbg
+fg_offset_hs <= fg_offset_h + ('1'&X"77");
+fg_offset_vs <= fg_offset_v + ('0'&X"00");
 
-fg_scan_h    <= hcnt + (fg_offset_hs(8 downto 3) & "000");
-fg_scan_v    <= vcnt +  fg_offset_vs;
+fg_scan_h    <= hflip - (fg_offset_hs(8 downto 3) & "000") - 16 when flip = '1' else hcnt + (fg_offset_hs(8 downto 3) & "000");
+fg_scan_v    <= vflip - fg_offset_vs + 4 when flip = '1' else vcnt + fg_offset_vs;
 fg_scan_addr <= fg_scan_v(7 downto 3) & fg_scan_h(8 downto 3);
 
 process (clock_18, slot24)
@@ -820,11 +832,11 @@ fg_grphx_addr <= flip_h & fg_code_p & fg_scan_v(2 downto 0) when '0',
                  flip_h & fg_code_p & not fg_scan_v(2 downto 0) when others;
 
 -- serialize bg graphics (2 bits / pixel)
-bg_bits <= bg_grphx_0(to_integer(unsigned(hcnt(2 downto 0) xor "111"))) &
-					 bg_grphx_1(to_integer(unsigned(hcnt(2 downto 0) xor "111" ))) ;
+bg_bits <= bg_grphx_0(to_integer(unsigned(hcnt(2 downto 0) xor not(flip & flip & flip)))) &
+           bg_grphx_1(to_integer(unsigned(hcnt(2 downto 0) xor not(flip & flip & flip))));
 
 -- serialize fg graphics (1 bit / pixel)
-fg_bit <= fg_grphx(to_integer(unsigned(hcnt(2 downto 0)  xor "111")));
+fg_bit <= fg_grphx(to_integer(unsigned(hcnt(2 downto 0) xor not(flip & flip & flip))));
 
 -- set bg palette with bg color_set and bg serialized graphic bits
 bg_palette_addr <= bg_attr(1 downto 0) & bg_code(7) & bg_attr(5 downto 2) & bg_bits;
@@ -841,13 +853,13 @@ begin
 		bg_color_delay_5 <= bg_color_delay_5(6 downto 0) & bg_palette_msb_do(1);
 
 		-- select delay line output to finish bg horizontal scrolling with respect to 3 lsb bits
-		bg_color(0) <= bg_color_delay_0(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		bg_color(1) <= bg_color_delay_1(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		bg_color(2) <= bg_color_delay_2(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		bg_color(3) <= bg_color_delay_3(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		bg_color(4) <= bg_color_delay_4(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		bg_color(5) <= bg_color_delay_5(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
-		
+		bg_color(0) <= bg_color_delay_0(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+		bg_color(1) <= bg_color_delay_1(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+		bg_color(2) <= bg_color_delay_2(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+		bg_color(3) <= bg_color_delay_3(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+		bg_color(4) <= bg_color_delay_4(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+		bg_color(5) <= bg_color_delay_5(to_integer(unsigned(bg_mask xor bg_offset_hs(2 downto 0))));
+
 		-- set fg color or transparent color with respect to fg serialized graphic bit
 		if fg_bit = '1' then
 			fg_color <= "0"&fg_attr(1 downto 0) & fg_attr(5 downto 2);
@@ -1398,7 +1410,9 @@ vsync   => video_vs,
 csync   => video_csync,
 blank_h => blank_h,
 blank_v => blank_v,
-blankn  => video_blankn
+blankn  => video_blankn,
+h_offset => h_offset,
+v_offset => v_offset
 );
 
 -- microprocessor Z80 - 1

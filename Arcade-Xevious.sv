@@ -194,9 +194,13 @@ assign VIDEO_ARX = (!ar) ? ((status[2] ) ? 8'd4 : 8'd3) : (ar - 1'd1);
 assign VIDEO_ARY = (!ar) ? ((status[2] ) ? 8'd3 : 8'd4) : 12'd0;
 
 
-`include "build_id.v" 
+`include "build_id.v"
 localparam CONF_STR = {
-	"A.XEVS;;",
+	"Xevious;;",
+	"OOR,CRT H-sync adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
+	"OSV,CRT V-sync adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
+	"O8,Flip Screen,Off,On;",
+	"-;",
 	"H0OJK,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"H0O2,Orientation,Vert,Horz;",
 	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
@@ -378,10 +382,14 @@ xevious xevious
 	.blank_h(hblank),
 	.blank_v(vblank),
 
+	.flip(status[8]),
+	.h_offset(status[27:24]),
+	.v_offset(status[31:28]),
+
 	.audio(audio),
 
 	.b_test(1),
-	.b_svce(1), 
+	.b_svce(1),
 	.coin(m_coin),
 	.start1(m_start1),
 	.start2(m_start2),
