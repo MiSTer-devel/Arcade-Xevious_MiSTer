@@ -3,7 +3,7 @@
 -- http://darfpga.blogspot.fr
 ---------------------------------------------------------------------------------
 -- gen_ram.vhd & io_ps2_keyboard
--------------------------------- 
+--------------------------------
 -- Copyright 2005-2008 by Peter Wendrich (pwsoft@syntiac.com)
 -- http://www.syntiac.com/fpga64.html
 ---------------------------------------------------------------------------------
@@ -22,16 +22,16 @@
 -- Version 0.3 -- 28/02/2017
 --             Fixed cs54xx audio 2 (mb88 JMP instruction fixed)
 --
--- Version 0.2 -- 26/02/2017 -- 
+-- Version 0.2 -- 26/02/2017 --
 --             Replace cs50xx rough emulation by mb88 processor
 --             mb88.vhd : tstR and tbit fixed
 --
--- Version 0.1 -- 15/02/2017 -- 
+-- Version 0.1 -- 15/02/2017 --
 --		    Add ship explosion with mb88 processor
 ---------------------------------------------------------------------------------
 --  Features :
 --   TV 15KHz mode only (atm)
---   Cocktail mode : todo 
+--   Cocktail mode : todo
 --   Replace cs51xx with true mb88 processor : todo
 --
 --   Sound ok, Ship explode ok with true mb88 processor
@@ -55,15 +55,15 @@
 --    DO NOT SWITCH OFF DE2 or you will need to reload SRAM
 --    4) go back to QuartusII and program DE2 with "xevious_de2.sof"
 
---    Explanation : Xevious make use of large amount of data (prom). All these data could not fit into DE2-35 FPGA. 
+--    Explanation : Xevious make use of large amount of data (prom). All these data could not fit into DE2-35 FPGA.
 --    I choose to put all 3 CPUs program, foreground graphics, background graphics and sprite graphics data
 --    to external memory. This lead to 68Ko of data. As DE2-35 use a 16bits width SRAM since and DE2 control panel doesn't allow
---    to load 8bits width data all data have been duplicated on both 8bits LSB and 8bits MSB. So xevious_cpu_gfx_16bits.bin 
+--    to load 8bits width data all data have been duplicated on both 8bits LSB and 8bits MSB. So xevious_cpu_gfx_16bits.bin
 --    is 136Ko.
 
 --		For other boards one have to consider that the external data are accessed with a 18Mhz multiplexed addressing scheme. So
 --    external device have to have a 55ns max access time. Of course big enough FPGA may directly implement these data bank without
---    requiring external device. It is to notice that 55ns will be not so easy to reach with Flash or SDRAM memories.    
+--    requiring external device. It is to notice that 55ns will be not so easy to reach with Flash or SDRAM memories.
 
 --  Xevious Hardware characteristics :
 --
@@ -72,19 +72,19 @@
 --      8Ko program for CPU2
 --      4Ko program for CPU3
 --
---    One char tile map 64x28 (called foreground/fg) 
+--    One char tile map 64x28 (called foreground/fg)
 --      1 colors/64sets among 128 colors
---      4Ko ram (code + attr/color), 4Ko rom graphics, 8pixels of 1bits/byte 
---      Horizontal scrolling (horizontal for TV scan = vertical for upright cabinet) 
+--      4Ko ram (code + attr/color), 4Ko rom graphics, 8pixels of 1bits/byte
+--      Horizontal scrolling (horizontal for TV scan = vertical for upright cabinet)
 --      full emulation in vhdl
 
---    One background tile map 64x28 (called background/bg) 
+--    One background tile map 64x28 (called background/bg)
 --      4 colors/128sets among 128 colors
---      4Ko ram (code + attr/color), 8Ko rom graphics, 8pixels of 2bits/ 2bytes 
---      Horizontal/Vertical scrolling 
+--      4Ko ram (code + attr/color), 8Ko rom graphics, 8pixels of 2bits/ 2bytes
+--      Horizontal/Vertical scrolling
 --      full emulation in vhdl
 --
---    64 sprites with priorities, flip H/V, 2x size H/V, 
+--    64 sprites with priorities, flip H/V, 2x size H/V,
 --      8 colors/64sets among 128 colors.
 --      24Ko rom graphics, 4pixels of 3bits / 1.5byte
 --      4 colors/64sets among 128 colors.
@@ -98,16 +98,16 @@
 --    Terrain data
 --      8Ko + 4Ko + 4Ko rom
 --
---    Namco 06XX for 51/54XX control 
+--    Namco 06XX for 51/54XX control
 --      simplified emulation in vhdl
 --
---    Namco 50XX for protection management 
+--    Namco 50XX for protection management
 --      simplified emulation in vhdl
 
---    Namco 51XX for coin/credit management 
+--    Namco 51XX for coin/credit management
 --      simplified emulation in vhdl : 1coin/1credit, 1 or 2 players start
 --
---    Namco 54XX for sound effects 
+--    Namco 54XX for sound effects
 --      true mb88 processor ok
 --
 --    Namco sound waveform and frequency synthetizer
@@ -117,10 +117,10 @@
 --      full emulation in vhdl from what I think they should do.
 --
 --    Working ram : 2Kx8bits + 3x2Kx8bits + 2x4Kox8bits (all shared)
---    Sprites ram : 1 scan line delay flip/flop 512x4bits  
+--    Sprites ram : 1 scan line delay flip/flop 512x4bits
 --    Sound registers ram : 2x16x4bits
 --    Sound sequencer rom : 256x4bits (3 sequential 4 bits adders)
---    Sound wavetable rom : 256x4bits 8 waveform of 32 samples of 4bits/level  
+--    Sound wavetable rom : 256x4bits 8 waveform of 32 samples of 4bits/level
 ---------------------------------------------------------------------------------
 
 library ieee;
@@ -171,7 +171,7 @@ port(
  right          : in std_logic;
  fire           : in std_logic;
  bomb           : in std_logic;
- 
+
  pause          : in std_logic;
 
  hs_address     : in  std_logic_vector(10 downto 0);
@@ -215,7 +215,7 @@ architecture struct of xevious is
  signal cpu2_mreq_n : std_logic;
  signal cpu2_irq_n : std_logic;
  signal cpu2_m1_n   : std_logic;
- 
+
  signal cpu3_addr   : std_logic_vector(15 downto 0);
 -- signal cpu3_di     : std_logic_vector( 7 downto 0);
  signal cpu3_do     : std_logic_vector( 7 downto 0);
@@ -239,7 +239,7 @@ architecture struct of xevious is
  signal fg_offset_vs: std_logic_vector(8 downto 0);
  signal bg_scan_v   : std_logic_vector(8 downto 0);
  signal fg_scan_v   : std_logic_vector(8 downto 0);
- 
+
  signal code_ram_do : std_logic_vector( 7 downto 0);
  signal code_ram_we : std_logic;
  signal attr_ram_do : std_logic_vector( 7 downto 0);
@@ -278,24 +278,24 @@ architecture struct of xevious is
  signal change_next               : std_logic;
  signal credit_bcd_0              : std_logic_vector( 3 downto 0);
  signal credit_bcd_1              : std_logic_vector( 3 downto 0);
- 
+
 -- signal cs54XX_cmd        : std_logic_vector( 3 downto 0);
 -- signal cs54XX_do         : std_logic_vector( 7 downto 0);
- 
+
  signal cs54xx_cnt      : std_logic_vector(6 downto 0);
  signal cs54xx_ena      : std_logic;
  signal cs5Xxx_rw       : std_logic;
- 
- signal cs54xx_rom_addr : std_logic_vector(10 downto 0); 
- signal cs54xx_rom_do   : std_logic_vector( 7 downto 0); 
- 
- signal cs54xx_irq_n      : std_logic := '1'; 
- signal cs54xx_irq_cnt    : std_logic_vector( 3 downto 0); 
- signal cs54xx_k_port_in  : std_logic_vector( 3 downto 0); 
- signal cs54xx_r0_port_in : std_logic_vector( 3 downto 0); 
- signal cs54xx_audio_1    : std_logic_vector( 3 downto 0); 
- signal cs54xx_audio_2    : std_logic_vector( 3 downto 0); 
- signal cs54xx_audio_3    : std_logic_vector( 3 downto 0); 
+
+ signal cs54xx_rom_addr : std_logic_vector(10 downto 0);
+ signal cs54xx_rom_do   : std_logic_vector( 7 downto 0);
+
+ signal cs54xx_irq_n      : std_logic := '1';
+ signal cs54xx_irq_cnt    : std_logic_vector( 3 downto 0);
+ signal cs54xx_k_port_in  : std_logic_vector( 3 downto 0);
+ signal cs54xx_r0_port_in : std_logic_vector( 3 downto 0);
+ signal cs54xx_audio_1    : std_logic_vector( 3 downto 0);
+ signal cs54xx_audio_2    : std_logic_vector( 3 downto 0);
+ signal cs54xx_audio_3    : std_logic_vector( 3 downto 0);
 
  signal cs50XX_data_cnt   : std_logic_vector( 1 downto 0);
  signal cs50XX_cmd        : std_logic_vector( 7 downto 0);
@@ -303,22 +303,22 @@ architecture struct of xevious is
  signal cs50XX_cmd_E5_do  : std_logic_vector( 7 downto 0);
  signal cs50XX_do         : std_logic_vector( 7 downto 0);
 
- signal cs50xx_rom_addr   : std_logic_vector(10 downto 0); 
- signal cs50xx_rom_do     : std_logic_vector( 7 downto 0); 
+ signal cs50xx_rom_addr   : std_logic_vector(10 downto 0);
+ signal cs50xx_rom_do     : std_logic_vector( 7 downto 0);
 
- signal cs50xx_irq_n      : std_logic := '1'; 
- signal cs50xx_irq_cnt    : std_logic_vector( 3 downto 0); 
- signal cs50xx_k_port_in  : std_logic_vector( 3 downto 0); 
- signal cs50xx_r0_port_in : std_logic_vector( 3 downto 0); 
- signal cs50xx_ol_port_out: std_logic_vector( 3 downto 0); 
- signal cs50xx_oh_port_out: std_logic_vector( 3 downto 0); 
- 
+ signal cs50xx_irq_n      : std_logic := '1';
+ signal cs50xx_irq_cnt    : std_logic_vector( 3 downto 0);
+ signal cs50xx_k_port_in  : std_logic_vector( 3 downto 0);
+ signal cs50xx_r0_port_in : std_logic_vector( 3 downto 0);
+ signal cs50xx_ol_port_out: std_logic_vector( 3 downto 0);
+ signal cs50xx_oh_port_out: std_logic_vector( 3 downto 0);
+
  --signal cs05XX_ctrl       : std_logic_vector( 5 downto 0);
- 
+
  --signal dip_switch_a  : std_logic_vector (7 downto 0);
  -- signal dip_switch_b  : std_logic_vector (7 downto 0);
  signal dip_switch_do : std_logic_vector (1 downto 0);
- 
+
  signal bg_code,bg_code_p : std_logic_vector( 7 downto 0);
  signal bg_attr,bg_attr_p : std_logic_vector( 7 downto 0);
  signal bg_grphx_addr     : std_logic_vector(11 downto 0);
@@ -334,7 +334,7 @@ architecture struct of xevious is
  signal bg_color_delay_4  : std_logic_vector( 7 downto 0);
  signal bg_color_delay_5  : std_logic_vector( 7 downto 0);
  signal bg_color          : std_logic_vector( 5 downto 0);
- 
+
  signal fg_code,fg_code_p : std_logic_vector( 7 downto 0);
  signal fg_attr,fg_attr_p : std_logic_vector( 7 downto 0);
  signal fg_grphx_addr     : std_logic_vector(11 downto 0);
@@ -342,8 +342,8 @@ architecture struct of xevious is
  signal fg_grphx          : std_logic_vector( 7 downto 0);
  signal fg_bit            : std_logic;
  signal fg_color          : std_logic_vector( 6 downto 0);
- 
- signal terrain_bs0         : std_logic_vector( 7 downto 0); 
+
+ signal terrain_bs0         : std_logic_vector( 7 downto 0);
  signal terrain_bs1         : std_logic_vector( 7 downto 0);
  signal terrain_2a_rom_addr : std_logic_vector(11 downto 0);
  signal terrain_2a_rom_do   : std_logic_vector( 7 downto 0);
@@ -352,21 +352,21 @@ architecture struct of xevious is
  signal terrain_2c_rom_addr : std_logic_vector(11 downto 0);
  signal terrain_2c_rom_do   : std_logic_vector( 7 downto 0);
  signal terrain_mux_do      : std_logic_vector( 2 downto 0);
- signal terrain_bb0         : std_logic_vector( 7 downto 0); 
+ signal terrain_bb0         : std_logic_vector( 7 downto 0);
  signal terrain_bb1         : std_logic_vector( 7 downto 0);
  signal terrain_do          : std_logic_vector( 7 downto 0);
- 
+
  signal bg_palette_addr   : std_logic_vector( 8 downto 0);
- signal bg_palette_lsb_do : std_logic_vector( 7 downto 0); 
- signal bg_palette_msb_do : std_logic_vector( 7 downto 0); 
+ signal bg_palette_lsb_do : std_logic_vector( 7 downto 0);
+ signal bg_palette_msb_do : std_logic_vector( 7 downto 0);
 
  signal rgb_palette_addr     : std_logic_vector( 7 downto 0);
- signal rgb_palette_red_do   : std_logic_vector( 7 downto 0); 
- signal rgb_palette_green_do : std_logic_vector( 7 downto 0); 
- signal rgb_palette_blue_do  : std_logic_vector( 7 downto 0); 
- 
+ signal rgb_palette_red_do   : std_logic_vector( 7 downto 0);
+ signal rgb_palette_green_do : std_logic_vector( 7 downto 0);
+ signal rgb_palette_blue_do  : std_logic_vector( 7 downto 0);
+
  signal sprite_num     : std_logic_vector(5 downto 0);
- signal sprite_state   : std_logic_vector(2 downto 0); 
+ signal sprite_state   : std_logic_vector(2 downto 0);
  signal sp_line        : std_logic_vector(7 downto 0);
  signal sp_grphx_cnt   : std_logic_vector(1 downto 0);
  signal sp_scan_addr   : std_logic_vector(6 downto 0);
@@ -384,8 +384,8 @@ architecture struct of xevious is
  signal sp_grphx_0     : std_logic_vector(7 downto 0);
  signal sp_grphx_1     : std_logic_vector(3 downto 0);
  signal sp_palette_addr : std_logic_vector(8 downto 0);
- signal sp_palette_lsb_do: std_logic_vector(7 downto 0); 
- signal sp_palette_msb_do: std_logic_vector(7 downto 0); 
+ signal sp_palette_lsb_do: std_logic_vector(7 downto 0);
+ signal sp_palette_msb_do: std_logic_vector(7 downto 0);
  signal sp_color_wr      : std_logic_vector(7 downto 0);
  signal sp_color_rd      : std_logic_vector(6 downto 0);
  signal spflip_V ,spflip_H  : std_logic;
@@ -393,8 +393,8 @@ architecture struct of xevious is
  signal spflip_3V,spflip_3H : std_logic_vector(2 downto 0);
  signal spflips             : std_logic_vector(12 downto 0);
 
- signal flip_h         : std_logic; 
- 
+ signal flip_h         : std_logic;
+
  signal sp_ram1_addr    : std_logic_vector(8 downto 0);
  signal sp_ram1_di      : std_logic_vector(6 downto 0);
  signal sp_ram1_do      : std_logic_vector(6 downto 0);
@@ -403,7 +403,7 @@ architecture struct of xevious is
  signal sp_ram2_di      : std_logic_vector(6 downto 0);
  signal sp_ram2_do      : std_logic_vector(6 downto 0);
  signal sp_ram2_we      : std_logic;
- 
+
  signal irq1_clr_n  : std_logic;
  signal irq2_clr_n  : std_logic;
  signal nmion_n     : std_logic;
@@ -450,15 +450,15 @@ audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000"
 -- sp stand for sprite, fg stand for foreground and bg stand for background.
 -- make access slots from 18MHz
 --  1 access to any ram or rom for each cpu every 2 pixels
---  1 access to ram(2 bytes) for foreground every 8 pixels (code and attr/color simultaneous) 
+--  1 access to ram(2 bytes) for foreground every 8 pixels (code and attr/color simultaneous)
 --  1 access to ram(2 bytes) for background every 8 pixels (code and attr/color simultaneous)
---  8 access to ram(3 bytes) for sprites every 8 pixels (code, attr and color simultaneous) 
+--  8 access to ram(3 bytes) for sprites every 8 pixels (code, attr and color simultaneous)
 --  1 access to fg graphix rom every 8 pixels (1 color bit / pixel) for foreground scan machine
 --  2 access to bg graphix rom every 8 pixels (2 color bits / pixel) for background scan machine
 --  8 access to sp graphix rom every 8 pixels (3 color bits / pixel) for sprite scan machine
---  2 access to sound ram every 2 pixels for sound machine 
+--  2 access to sound ram every 2 pixels for sound machine
 --
---  sprite machine should access ram and rom graphics often enough to allow many sprites on the same scan line. 
+--  sprite machine should access ram and rom graphics often enough to allow many sprites on the same scan line.
 --
 --       hcnt   |          0         |            1             |          2          |            3             |
 --       slot   |   0  |   1  |   2  |    3   |   4    |   5    |   0   |   1  |   2  |    3   |   4    |   5    |
@@ -478,7 +478,7 @@ audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000"
 -- remember that enable signals are one slot early
 
 process (clock_18, hcnt)
-begin 
+begin
 	if rising_edge(clock_18) then
 		slot24      <= slot24 + "00001";
 		slot        <= slot + "001";
@@ -510,39 +510,39 @@ begin
 	ena_sprite_grph1 <= '0';
 	cs54xx_ena       <= '0';
 
-	if slot = "100" or slot = "001" then ena_vidgen       <= '1';	end if;	 
+	if slot = "100" or slot = "001" then ena_vidgen       <= '1';	end if;
 	if slot = "010" or slot = "100" then ena_snd_machine  <= '1';	end if;	 -- sound ram access
 	if slot = "011" or slot = "100" then ena_sprite       <= '1';	end if;  -- ram_bus access (wram : sp regs)
 	if slot = "010"  then ena_sprite_grph0 <= '1';	end if;  -- rom_bus access (graphx)
 	if slot = "011"  then ena_sprite_grph1 <= '1';	end if;  -- rom_bus access (graphx)
-	
+
 --	if slot = "101" and (cpu1_addr /= sw(15 downto 0) or cpu1_m1_n = '1') then cpu1_ena <= '1';	end if;
 --	if slot = "101" and (cpu1_addr /= X"3bb2" or cpu1_m1_n = '1') then cpu1_ena <= '1';	end if;
 --	if slot = "101" and (cpu1_addr /= X"030e" or cpu1_m1_n = '1') then cpu1_ena <= '1';	end if; -- stopped @ grid display
 
-	if slot = "101" then cpu1_ena <= '1';	end if;	
-	if slot = "000" then cpu2_ena <= '1';	end if;	
+	if slot = "101" then cpu1_ena <= '1';	end if;
+	if slot = "000" then cpu2_ena <= '1';	end if;
 	if slot = "001" then cpu3_ena <= '1';	end if;
-		
+
 	if cs54xx_cnt = "0000000" then cs54xx_ena <= '1'; end if;
---	if slot24 = "00000" or slot24 = "01100" then cs54xx_ena <= '1';	end if;	 
---	if slot = "000" or slot = "011" then cs54xx_ena <= '1';	end if;	 
-	
+--	if slot24 = "00000" or slot24 = "01100" then cs54xx_ena <= '1';	end if;
+--	if slot = "000" or slot = "011" then cs54xx_ena <= '1';	end if;
+
  end if;
 end process;
 
 --- SPRITES MACHINE ---
 -----------------------
--- Sprite machine makes use of two video memory lines. Read and write process are toggled every other line. 
+-- Sprite machine makes use of two video memory lines. Read and write process are toggled every other line.
 --
 -- At each video line sprite machine has to scan all 64 sprite registers.
 -- sprite_num holds which one of the 64 sprite is currently selected.
 -- Process consist of :
---   * check from vertical sprite position, vertical sprite size and current video line 
+--   * check from vertical sprite position, vertical sprite size and current video line
 --     if sprite belong to current video line, if not go to next sprite
 --   * if sprite belong to current video line, collect sprite code, sprite attributes
 --     and sprite color (color_set)
---   * then with sprite code collect sprite graphix data from gfx rom, 
+--   * then with sprite code collect sprite graphix data from gfx rom,
 --     1.5 bytes for each 4 pixels, sprite is 16 or 32 pixels depending on horizontal size
 --     (2 bytes are actulally read but only 1/2 of one of these 2 bytes is use)
 --   * for each 1.5 bytes collected serialise 3bits of graphix data
@@ -582,7 +582,7 @@ begin
 	-- when ena_sprite = '1' wrams are adressed by sp_scan_addr, sprite regs can be collected
 	if ena_sprite = '1' and sprite_state = "000" then
 		sprite_code <= wram3_do;
-		sprite_attr <= wram2_do; 
+		sprite_attr <= wram2_do;
 --		sprite_code <= sw(7 downto 0); -- dbg
 --		sprite_attr <= sw(15 downto 8); -- dbg
 		sprite_vcnt <= sp_line(4 downto 0);
@@ -591,17 +591,17 @@ begin
 		   (sp_line(7 downto 5) = "111" and wram2_do(1)='1' )then -- size V x 2
 --		   (sp_line(7 downto 5) = "111" and sw(9) ='1') then --  dbg
 			sprite_state <= "001";
-		-- sprite doen't belong to current horizontal line
+		-- sprite doesn't belong to current horizontal line
 		else
-			-- if 64th sprite reached stop sprite machine 
+			-- if 64th sprite reached stop sprite machine
 			if sprite_num = "111111" then
 				sprite_state <= "111";
 			-- if not 64th sprite go to next sprite
 			else
-				sprite_num <= sprite_num + "000001";			
+				sprite_num <= sprite_num + "000001";
 				sprite_state <= "000";
-			end if;		
-		end if;	
+			end if;
+		end if;
 	end if;
 
 	-- get sprite color set
@@ -615,14 +615,14 @@ begin
 	end if;
 
 	-- when ena_sprite_grph0 ='1' gfx rom are addressed with first data of current sprite_code
-	-- collect first graphic byte	
+	-- collect first graphic byte
 	if ena_sprite_grph0 = '1' and sprite_state = "010" then
 		sp_grphx_0 <= rom_bus_do;
 		sprite_state <= "011";
 	end if;
-	
+
 	-- when ena_sprite_grph1 ='1' gfx rom are addressed with second data of current sprite_code
-	-- collect second graphic byte, keep only 4lsb or 4msb depending on sprite attribut and code	
+	-- collect second graphic byte, keep only 4lsb or 4msb depending on sprite attribut and code
 	if ena_sprite_grph1 = '1' and sprite_state = "011" then
 		if sprite_attr(7) = '0' then
 			if sprite_code(7) = '0' then
@@ -650,12 +650,12 @@ begin
 			if sprite_num = "111111" then
 				sprite_state <= "111";
 			else
-				sprite_num <= sprite_num + "000001";			
+				sprite_num <= sprite_num + "000001";
 				sprite_state <= "000";
-			end if;		
+			end if;
 		end if;
 	end if;
-	
+
 	-- read process
 	-- get color from either ram
 	if slot = "000" or slot = "011" then
@@ -665,13 +665,13 @@ begin
 			sp_color_rd <= sp_ram1_do;
 		end if;
 	end if;
-	
+
 	-- clear ram after reading
 	sp_ram_clr <= '0';
 	if slot = "001" or slot = "100" then
 		sp_ram_clr <= '1';
 	end if;
-	
+
 	-- next read address
 	if slot = "010" or slot = "101" then
 		sp_ram_rd_addr <= sp_ram_rd_addr + "000000001";
@@ -682,13 +682,13 @@ end process;
 
 -- write to shadow ram if sprite color ready and not transparent
 sp_ram_we <= '1' when sprite_state = "100" and sp_color_wr/=X"00" else '0';
--- toggle read or write address on odd/even line (vertical) number 
+-- toggle read or write address on odd/even line (vertical) number
 sp_ram1_addr <= sp_ram_wr_addr when vcnt(0) = '1' else sp_ram_rd_addr;
 sp_ram2_addr <= sp_ram_wr_addr when vcnt(0) = '0' else sp_ram_rd_addr;
--- toggle sprite color or clear data to be written on odd/even line (vertical) number 
+-- toggle sprite color or clear data to be written on odd/even line (vertical) number
 sp_ram1_di  <= sp_color_wr(6 downto 0) when vcnt(0) = '1' else "1111111";
 sp_ram2_di  <= sp_color_wr(6 downto 0) when vcnt(0) = '0' else "1111111";
--- toggle sprite write command or clear command on odd/even line (vertical) number 
+-- toggle sprite write command or clear command on odd/even line (vertical) number
 sp_ram1_we <= sp_ram_we when vcnt(0) = '1' else sp_ram_clr;
 sp_ram2_we <= sp_ram_we when vcnt(0) = '0' else sp_ram_clr;
 
@@ -697,15 +697,15 @@ sp_code_ext  <= '0'&sprite_code when sprite_attr(7) = '0' else "100"&sprite_code
 -- prepare flip masks
 spflip_H <= sprite_attr(2) xor flip_h; spflip_2H <= spflip_H & spflip_H;
 spflip_V <= sprite_attr(3); spflip_2V <= spflip_V & spflip_V;
--- finish preparing flip mask from flip attribute (flip v, flip h) and with respect to sprite size (2xV, 2xH) 
+-- finish preparing flip mask from flip attribute (flip v, flip h) and with respect to sprite size (2xV, 2xH)
 with sprite_attr(1 downto 0) select
 spflips <= 	"0000000"                       & spflip_V & spflip_2H & spflip_V & spflip_2V when "00",
 						"000000"  &            spflip_H & spflip_V & spflip_2H & spflip_V & spflip_2V when "01",
 						"00000"   & spflip_V & '0'      & spflip_V & spflip_2H & spflip_V & spflip_2V when "10",
 						"00000"   & spflip_V & spflip_H & spflip_V & spflip_2H & spflip_V & spflip_2V when others;
 
--- set graphics rom address (external) from sprite code, flip mask, sprite size (2xV, 2xH), sprite horizontal tile and vertical line 
--- rom data will be latch within sprite machine loop at sprite_state = "010" and sprite_state = "011"  
+-- set graphics rom address (external) from sprite code, flip mask, sprite size (2xV, 2xH), sprite horizontal tile and vertical line
+-- rom data will be latch within sprite machine loop at sprite_state = "010" and sprite_state = "011"
 with sprite_attr(1 downto 0) select
 sp_grphx_addr <=  (sp_code_ext(8 downto 0)                                    & sprite_vcnt(3) & sprite_hcnt(3 downto 2) & sprite_vcnt(2 downto 0) ) xor spflips when "00",
 									(sp_code_ext(8 downto 1) & 						      sprite_hcnt(4)  & sprite_vcnt(3) & sprite_hcnt(3 downto 2) & sprite_vcnt(2 downto 0) ) xor spflips when "01",
@@ -716,10 +716,10 @@ sp_grphx_addr <=  (sp_code_ext(8 downto 0)                                    & 
 sp_palette_addr <= sprite_color(5 downto 0) &
 									sp_grphx_1(to_integer(unsigned(      ((not sprite_hcnt(1 downto 0)) xor spflip_2H )))) &
 									sp_grphx_0(to_integer(unsigned('1' & ((not sprite_hcnt(1 downto 0)) xor spflip_2H )))) &
-									sp_grphx_0(to_integer(unsigned('0' & ((not sprite_hcnt(1 downto 0)) xor spflip_2H )))); 
+									sp_grphx_0(to_integer(unsigned('0' & ((not sprite_hcnt(1 downto 0)) xor spflip_2H ))));
 -- get sprite_color to be written from color palette or transparent (00) if color_set > 63
 with sprite_color(6) select
-	sp_color_wr <= sp_palette_msb_do(3 downto 0) & sp_palette_lsb_do(3 downto 0) when '0', X"00" when others; 
+	sp_color_wr <= sp_palette_msb_do(3 downto 0) & sp_palette_lsb_do(3 downto 0) when '0', X"00" when others;
 
 --- FOREGROUND/BACKGROUND TILES MACHINE ---
 -------------------------------------------
@@ -754,32 +754,32 @@ fg_offset_vs <= fg_offset_v + ('0'&X"00"); --sw(17 downto 9);--('0'&X"00"); -- d
 fg_scan_h    <= hcnt + (fg_offset_hs(8 downto 3) & "000");
 fg_scan_v    <= vcnt +  fg_offset_vs;
 fg_scan_addr <= fg_scan_v(7 downto 3) & fg_scan_h(8 downto 3);
-	
+
 process (clock_18, slot24)
 begin
  if rising_edge(clock_18) then
     -- get code, attr (inc. color_set), graphics with respect to slot and rom/ram addressing scheme
 		-- 1 graphics byte => 8 pixels of 2 colors for foreground (1 color 1 transparent)
-	  -- 2 graphics bytes => 8 pixels of 4 colors for background (one the 4 colors could be transparent depending on bg color_set)	
-		if slot24 = "00011" then 
+	  -- 2 graphics bytes => 8 pixels of 4 colors for background (one the 4 colors could be transparent depending on bg color_set)
+		if slot24 = "00011" then
 			fg_code_p <= code_ram_do;
 			fg_attr_p <= attr_ram_do;
 		end if;
-		if slot24 = "00101" then 
+		if slot24 = "00101" then
 			fg_grphx_p <= rom_bus_do;
 		end if;
-		if slot24 = "01001" then 
+		if slot24 = "01001" then
 			bg_code_p <= code_ram_do;
 			bg_attr_p <= attr_ram_do;
 		end if;
 		if slot24 = "01011" then
 			bg_grphx_0_p <= rom_bus_do;
 		end if;
-		if slot24 = "10001" then 
+		if slot24 = "10001" then
 			bg_grphx_1_p <= rom_bus_do;
-		end if;		
+		end if;
 		-- synchronise graphics and attributes at end of current tile for fg and bg
-		if slot24 = "10111" then 
+		if slot24 = "10111" then
 			fg_attr <= fg_attr_p;
 			bg_attr <= bg_attr_p;
 			fg_code <= fg_code_p;
@@ -790,8 +790,8 @@ begin
 			else
 				for k in 0 to 7 loop
 					fg_grphx(k) <= fg_grphx_p(7-k);
-				end loop;			
-			end if;			
+				end loop;
+			end if;
 			-- flip h background grphics if needed
 			if bg_attr_p(6) = '0' then
 			  bg_grphx_0 <= bg_grphx_0_p;
@@ -801,23 +801,23 @@ begin
 					bg_grphx_0(k) <= bg_grphx_0_p(7-k);
 					bg_grphx_1(k) <= bg_grphx_1_p(7-k);
 				end loop;
-			end if;			
+			end if;
 		end if;
  end if;
 end process;
 
 -- set bg graphics rom address (external) from bg tile code, vertical bg line with respect to vertical flip
--- rom data will be latch within bg/fg machine for slot24 = "01011" and slot24 = "10001"  
+-- rom data will be latch within bg/fg machine for slot24 = "01011" and slot24 = "10001"
 with bg_attr_p(7) select
 bg_grphx_addr <= 	bg_attr_p(0) & bg_code_p & bg_scan_v(2 downto 0) when '0',
 									bg_attr_p(0) & bg_code_p & not bg_scan_v(2 downto 0) when others;
 
 -- set fg graphics rom address (external) from fg tile code, vertical fg line with respect to vertical flip
 -- (flip H is used to access rom horizontal flipped character)
--- rom data will be latch within bg/fg machine for slot24 = "00101"  
+-- rom data will be latch within bg/fg machine for slot24 = "00101"
 with fg_attr_p(7) select
-fg_grphx_addr <= 	flip_h & fg_code_p & fg_scan_v(2 downto 0) when '0',
-									flip_h & fg_code_p & not fg_scan_v(2 downto 0) when others; 
+fg_grphx_addr <= flip_h & fg_code_p & fg_scan_v(2 downto 0) when '0',
+                 flip_h & fg_code_p & not fg_scan_v(2 downto 0) when others;
 
 -- serialize bg graphics (2 bits / pixel)
 bg_bits <= bg_grphx_0(to_integer(unsigned(hcnt(2 downto 0) xor "111"))) &
@@ -832,14 +832,14 @@ bg_palette_addr <= bg_attr(1 downto 0) & bg_code(7) & bg_attr(5 downto 2) & bg_b
 process (clock_18, ena_vidgen)
 begin
  if rising_edge(clock_18) and ena_vidgen = '1' then
-    -- 7 pixels length delay line feed with bg color 6bits  
+    -- 7 pixels length delay line feed with bg color 6bits
 		bg_color_delay_0 <= bg_color_delay_0(6 downto 0) & bg_palette_lsb_do(0);
 		bg_color_delay_1 <= bg_color_delay_1(6 downto 0) & bg_palette_lsb_do(1);
 		bg_color_delay_2 <= bg_color_delay_2(6 downto 0) & bg_palette_lsb_do(2);
 		bg_color_delay_3 <= bg_color_delay_3(6 downto 0) & bg_palette_lsb_do(3);
 		bg_color_delay_4 <= bg_color_delay_4(6 downto 0) & bg_palette_msb_do(0);
 		bg_color_delay_5 <= bg_color_delay_5(6 downto 0) & bg_palette_msb_do(1);
-		
+
 		-- select delay line output to finish bg horizontal scrolling with respect to 3 lsb bits
 		bg_color(0) <= bg_color_delay_0(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
 		bg_color(1) <= bg_color_delay_1(to_integer(unsigned(not bg_offset_hs(2 downto 0))));
@@ -852,28 +852,28 @@ begin
 		if fg_bit = '1' then
 			fg_color <= "0"&fg_attr(1 downto 0) & fg_attr(5 downto 2);
 		else
-			fg_color <= "1111111"; 
+			fg_color <= "1111111";
 		end if;
-		
+
  end if;
 end process;
- 
+
 --- VIDEO MUX ---
 -----------------
 
 process (clock_18, ena_vidgen)
 begin
  if rising_edge(clock_18) and ena_vidgen = '1'then
-  -- set rbg palette address prior with fg color if < 63 
+  -- set rbg palette address prior with fg color if < 63
 	-- or with sprite color if not transparent
 	-- otherwise with background color
   if fg_color(6)='0' then
-		rgb_palette_addr <= '0' & fg_color;	
+		rgb_palette_addr <= '0' & fg_color;
 	else
 	  if sp_color_rd /= "1111111" then
-			rgb_palette_addr <= "0" & sp_color_rd;	
+			rgb_palette_addr <= "0" & sp_color_rd;
 		else
-			rgb_palette_addr <= "00" & bg_color;	
+			rgb_palette_addr <= "00" & bg_color;
 		end if;
 	end if;
  end if;
@@ -885,7 +885,7 @@ begin
  if rising_edge(clock_18) then
 		video_r <= rgb_palette_red_do(3 downto 0);
 		video_g <= rgb_palette_green_do(3 downto 0);
-		video_b <= rgb_palette_blue_do(3 downto 0);		
+		video_b <= rgb_palette_blue_do(3 downto 0);
  end if;
 end process;
 
@@ -899,14 +899,14 @@ terrain_2b_rom_addr <=  terrain_bs1(6 downto 1) & terrain_bs0(7 downto 1);
 
 terrain_mux_do <= terrain_2a_rom_do(2 downto 0) when terrain_bs0(1) = '0' else terrain_2a_rom_do(6 downto 4);
 
-terrain_2c_rom_addr <=  hcnt(0) & terrain_mux_do(0) & -- hcnt(2) is used but any fast enough toggling signal would be ok. 
+terrain_2c_rom_addr <=  hcnt(0) & terrain_mux_do(0) & -- hcnt(2) is used but any fast enough toggling signal would be ok.
 												terrain_2b_rom_do &
 												(terrain_bs1(0) xor terrain_mux_do(1)) &
 												(terrain_bs0(0) xor terrain_mux_do(2));
 
 -- prepare both bb0/bb1 output registers to be read when CPU will required
 -- register holds tile code and attribut that will be written to bg wram.
--- bg wram is written coherently with horizontal scrolling out of displayed zone  
+-- bg wram is written coherently with horizontal scrolling out of displayed zone
 process (clock_18, ena_vidgen)
 begin
  if rising_edge(clock_18) then
@@ -920,8 +920,8 @@ begin
  end if;
 end process;
 
--- select and return which register is addressed 
-terrain_do <= terrain_bb0 when ram_bus_addr(0) = '0' else terrain_bb1; 
+-- select and return which register is addressed
+terrain_do <= terrain_bb0 when ram_bus_addr(0) = '0' else terrain_bb1;
 
 --- SOUND MACHINE ---
 ---------------------
@@ -941,8 +941,8 @@ port map(
 clock_18  => clock_18,
 ena       => ena_snd_machine and not pause,
 hcnt      => hcnt_r(5 downto 0),
-cpu_addr  => ram_bus_addr(3 downto 0), 
-cpu_do    => mux_cpu_do(3 downto 0), 
+cpu_addr  => ram_bus_addr(3 downto 0),
+cpu_do    => mux_cpu_do(3 downto 0),
 ram_0_we  => snd_ram_0_we,
 ram_1_we  => snd_ram_1_we,
 audio     => snd_audio
@@ -956,17 +956,17 @@ audio     => snd_audio
 rom_bus_addr <= "000"   & cpu1_addr(13 downto 0) when cpu1_ena = '1'   else -- 0x0_0000 - 0x0_3FFF : 16K prog cpu1
 								"0010"  & cpu2_addr(12 downto 0) when cpu2_ena = '1'   else -- 0x0_4000 - 0x0_5FFF :  8K prog cpu2
  				  			"00110" & cpu3_addr(11 downto 0) when cpu3_ena = '1'   else -- 0x0_6000 - 0x0_6FFF :  4K prog cpu3
-								"00111" & fg_grphx_addr          when slot24 = "00101" else -- 0x0_7000 - 0x0_7FFF :  4K fg grphx   
-								"01000" & bg_grphx_addr          when slot24 = "01011" else -- 0x0_8000 - 0x0_8FFF :  4K bg grphx1   
+								"00111" & fg_grphx_addr          when slot24 = "00101" else -- 0x0_7000 - 0x0_7FFF :  4K fg grphx
+								"01000" & bg_grphx_addr          when slot24 = "01011" else -- 0x0_8000 - 0x0_8FFF :  4K bg grphx1
 								"01001" & bg_grphx_addr          when slot24 = "10001" else -- 0x0_9000 - 0x0_9FFF :  4K bg grphx2
-								('0'&X"A000") + ("00"&sp_grphx_addr) when ena_sprite_grph0 = '1' else -- 0x0_A000 - 0x0_EFFF : 20K sp grphx1 -- ajouter '0_1010_0000_0000_0000'   
-								('0'&X"F000") + ("0000"&sp_grphx_addr(12 downto 0)) when ena_sprite_grph1 = '1' else -- 0x0_F000 - 0x1_0FFF :  8K sp grphx2 -- ajouter '0_1111_0000_0000_0000'     
+								('0'&X"A000") + ("00"&sp_grphx_addr) when ena_sprite_grph0 = '1' else -- 0x0_A000 - 0x0_EFFF : 20K sp grphx1 -- ajouter '0_1010_0000_0000_0000'
+								('0'&X"F000") + ("0000"&sp_grphx_addr(12 downto 0)) when ena_sprite_grph1 = '1' else -- 0x0_F000 - 0x1_0FFF :  8K sp grphx2 -- ajouter '0_1111_0000_0000_0000'
 								'0'&X"A5A5"; -- sighting mark
 
 -- ram address multiplexer
-ram_bus_addr <= cpu1_addr              when cpu1_ena = '1'   else 
-								cpu2_addr              when cpu2_ena = '1'   else 
- 								cpu3_addr              when cpu3_ena = '1'   else 
+ram_bus_addr <= cpu1_addr              when cpu1_ena = '1'   else
+								cpu2_addr              when cpu2_ena = '1'   else
+ 								cpu3_addr              when cpu3_ena = '1'   else
 								"00000" & fg_scan_addr when slot24 = "00011" else -- X000-X7FF => B000-B7FF (fg code) / C000-C7FF (fg attr)
 								"00001" & bg_scan_addr when slot24 = "01001" else -- X800-XFFF => B800-BFFF (bg code) / C800-CFFF (bg attr)
 								"000001111" & sp_scan_addr;                       -- X780-X7FF => wram1/2/3 (sprite registers)
@@ -987,8 +987,8 @@ mux_cpu_we <= 	(not cpu1_wr_n and cpu1_ena)or
 mux_cpu_mreq <= 	(not cpu1_mreq_n and cpu1_ena) or
 									(not cpu2_mreq_n and cpu2_ena) or
 									(not cpu3_mreq_n and cpu3_ena);
-									
--- dispatch cpu(s) we to devices 
+
+-- dispatch cpu(s) we to devices
 snd_ram_0_we <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 11) = "01101"  and ram_bus_addr(5 downto 4) = "00" else '0';
 snd_ram_1_we <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 11) = "01101"  and ram_bus_addr(5 downto 4) = "01" else '0';
 latch_we     <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 11) = "01101" else '0';
@@ -1003,7 +1003,7 @@ port_we      <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 12) = "1101
 terrain_we   <= '1' when mux_cpu_we = '1' and ram_bus_addr(15 downto 12) = "1111"  else '0'; -- bs0/1
 
 -- manage irq reset/enable, cpu1 and 2 reset, namco custom chips, misc. latches/registers
-process (reset, clock_18n, io_we) 
+process (reset, clock_18n, io_we)
 	variable cs06XX_nmi_cnt : natural range 0 to 10000;
 begin
  if reset='1' then
@@ -1016,23 +1016,23 @@ begin
 			cs51XX_coin_mode_cnt <= "000";
 			cs51XX_data_cnt <= "00";
 			cs50XX_cmd <= X"00";
-			flip_h <= '0';	
+			flip_h <= '0';
 			cs54xx_irq_n <= '1';
 			cs54xx_irq_cnt <= X"0";
 			cs50xx_irq_n <= '1';
 			cs50xx_irq_cnt <= X"0";
 			cs50xx_r0_port_in <= X"0";
 			cs50xx_k_port_in <= X"0";
- else 
-  if rising_edge(clock_18n) then 
-		if latch_we = '1' and ram_bus_addr(5 downto 4) = "10" then 
+ else
+  if rising_edge(clock_18n) then
+		if latch_we = '1' and ram_bus_addr(5 downto 4) = "10" then
 			if ram_bus_addr(2 downto 0) = "000" then irq1_clr_n  <= mux_cpu_do(0); end if;
 			if ram_bus_addr(2 downto 0) = "001" then irq2_clr_n  <= mux_cpu_do(0); end if;
 			if ram_bus_addr(2 downto 0) = "010" then nmion_n     <= mux_cpu_do(0); end if;
 			if ram_bus_addr(2 downto 0) = "011" then reset_cpu_n <= mux_cpu_do(0); end if;
 		end if;
-		
-		if port_we = '1' then 
+
+		if port_we = '1' then
 			if ram_bus_addr(6 downto 4) = "000" then bg_offset_h <= ram_bus_addr(0) & mux_cpu_do; end if;
 			if ram_bus_addr(6 downto 4) = "001" then fg_offset_h <= ram_bus_addr(0) & mux_cpu_do; end if;
 			if ram_bus_addr(6 downto 4) = "010" then bg_offset_v <= ram_bus_addr(0) & mux_cpu_do; end if;
@@ -1040,38 +1040,38 @@ begin
 			if ram_bus_addr(6 downto 4) = "111" then flip_h <= mux_cpu_do(0); end if;
 		end if;
 
-		if terrain_we = '1' then 
+		if terrain_we = '1' then
 			if ram_bus_addr(0) = '0' then terrain_bs0 <= mux_cpu_do; end if;
 			if ram_bus_addr(0) = '1' then terrain_bs1 <= mux_cpu_do; end if;
 		end if;
 
-		if irq1_clr_n = '0' then 
+		if irq1_clr_n = '0' then
 		  cpu1_irq_n <= '1';
 		elsif vcnt = std_logic_vector(to_unsigned(240,9)) and hcnt = std_logic_vector(to_unsigned(128,9)) then cpu1_irq_n <= '0';
  		end if;
-		if irq2_clr_n = '0' then 
+		if irq2_clr_n = '0' then
 		  cpu2_irq_n <= '1';
 		elsif vcnt = std_logic_vector(to_unsigned(240,9)) and hcnt = std_logic_vector(to_unsigned(128,9)) then cpu2_irq_n <= '0';
 		end if;
 
-		if cs54xx_irq_cnt = X"0" then 
+		if cs54xx_irq_cnt = X"0" then
 		  cs54xx_irq_n <= '1';
-		else 
+		else
 			if cs54xx_ena = '1' then
 				cs54xx_irq_cnt <= cs54xx_irq_cnt - '1';
 			end if;
 		end if;
 
-		if cs50xx_irq_cnt = X"0" then 
+		if cs50xx_irq_cnt = X"0" then
 		  cs50xx_irq_n <= '1';
-		else 
+		else
 			if cs54xx_ena = '1' then
 				cs50xx_irq_cnt <= cs50xx_irq_cnt - '1';
 			end if;
 		end if;
-	
+
 		-- write to cs06XX
-		if io_we = '1' then 
+		if io_we = '1' then
 			-- write to data register (0x7000)
 		  if ram_bus_addr(8) = '0' then
 				-- write data to device#4 (cs54XX)
@@ -1080,7 +1080,7 @@ begin
 						cs54xx_k_port_in <= mux_cpu_do(7 downto 4);
 						cs54xx_r0_port_in <= mux_cpu_do(3 downto 0);
 						cs54xx_irq_n <= '0';
-						cs54xx_irq_cnt <= X"7";						
+						cs54xx_irq_cnt <= X"7";
 				end if;
 				-- write data to device#1 (cs51XX)
 				if cs06XX_control(3 downto 0) = "0001" then
@@ -1096,18 +1096,18 @@ begin
 							cs51XX_credit_mode <= '1';
 							cs51XX_data_cnt <= "00";
 						end if;
-						-- if data = 5 enter switch mode 
+						-- if data = 5 enter switch mode
 						if mux_cpu_do(2 downto 0) = "101" then
 							cs51XX_switch_mode <= '1';  -- '1' for galaga '0' for xevious (see klugde mode ) TBC
 							cs51XX_credit_mode <= '0';
 							cs51XX_data_cnt <= "00";
 						end if;
-					-- when in coin mode	
+					-- when in coin mode
 					else
-						-- written coin/credit data are ignored atm 
+						-- written coin/credit data are ignored atm
 						-- only count down to exit coin_mode (request 4 write operations)
 						cs51XX_coin_mode_cnt <= cs51XX_coin_mode_cnt - "001";
-					end if;	
+					end if;
 				end if;
 				-- write data to device#3 (cs50XX)
 -- rough emulation
@@ -1124,13 +1124,13 @@ begin
 						cs50xx_k_port_in <= mux_cpu_do(7 downto 4);
 						cs50xx_r0_port_in <= mux_cpu_do(3 downto 0);
 						cs50xx_irq_n <= '0';
-						cs50xx_irq_cnt <= X"7";						
+						cs50xx_irq_cnt <= X"7";
 				end if;
 
-				
+
 			end if;
-			
-			-- write to control register (0x7100) 
+
+			-- write to control register (0x7100)
 			-- data(3..0) select custom chip 50xx/51xx/54xx
 			-- data (4)   read/write mode for custom chip (1 = read mode)
 			if ram_bus_addr(8) = '1' then
@@ -1141,33 +1141,33 @@ begin
 					cpu1_nmi_n <= '1';
 				else
 					cs06XX_nmi_cnt := 1;  -- start
-					
+
 					if mux_cpu_do(4 downto 0) = "10100" then  -- prepare next read to cs50xx
 						cs5Xxx_rw <= mux_cpu_do(4);             -- *must* launch irq to cs50xx
-						cs50xx_irq_n <= '0';          
-						cs50xx_irq_cnt <= X"7";						
+						cs50xx_irq_n <= '0';
+						cs50xx_irq_cnt <= X"7";
 					end if;
 
 				end if;
 			end if;
-		end if;	
-		
+		end if;
+
 		-- generate periodic nmi when timer is on
 		if cs06XX_nmi_cnt >= 1 then
 			if cpu1_ena = '1' then  -- to get 333ns tick
 --				-- 600 * 333ns = 200µs
---				if cs06XX_nmi_cnt < 600 then  
+--				if cs06XX_nmi_cnt < 600 then
 				-- 2000 * 333ns = 666µs
-				if cs06XX_nmi_cnt < 600 then  
+				if cs06XX_nmi_cnt < 600 then
 					cs06XX_nmi_cnt := cs06XX_nmi_cnt + 1;
 					cpu1_nmi_n <= '1';
 				else
 					cs06XX_nmi_cnt := 1;
 					cpu1_nmi_n <= '0';
-				end if;	
+				end if;
 			end if;
 		end if;
-		
+
 		-- manage cs06XX data read (0x7000)
 		change_next <= '0';
 		if mux_cpu_mreq = '1' and mux_cpu_we ='0' and ram_bus_addr(15 downto 11) = "01110" then
@@ -1178,43 +1178,43 @@ begin
 		-- cycle data_cnt at each read
 		if change_next = '1' then
 			if cs06XX_control(3 downto 0) = "0001" then
-				if cs51XX_data_cnt = "10" then cs51XX_data_cnt <= "00"; 
+				if cs51XX_data_cnt = "10" then cs51XX_data_cnt <= "00";
 				else cs51XX_data_cnt <= cs51XX_data_cnt + "01"; end if;
 			end if;
 			if cs06XX_control(3 downto 0) = "0100" then
 				-- cs50xx (rough emulation)
-				if cs50XX_data_cnt = "11" then cs50XX_data_cnt <= "00"; 
+				if cs50XX_data_cnt = "11" then cs50XX_data_cnt <= "00";
 				else cs50XX_data_cnt <= cs50XX_data_cnt + "01"; end if;
 				-- cs50xx (m88 emulation)
 				cs5Xxx_rw <= cs06XX_control(4);  -- launch irq to request next read
 				cs50xx_irq_n <= '0';
-				cs50xx_irq_cnt <= X"7";						
-	
-			end if;				
+				cs50xx_irq_cnt <= X"7";
+
+			end if;
 		end if;
-		
+
 		-- manage credit count (bcd)
 		--   increase at each coin up to 99
 		coin_r <= coin;
 		start1_r <= start1;
 		start2_r <= start2;
-		if coin = '1' and coin_r = '0' then 
-			if credit_bcd_0 = "1001" then 
+		if coin = '1' and coin_r = '0' then
+			if credit_bcd_0 = "1001" then
 				if credit_bcd_1 /= "1001" then
 					credit_bcd_1 <= credit_bcd_1 + "0001";
 					credit_bcd_0 <= "0000";
 				end if;
 			else
 				credit_bcd_0 <= credit_bcd_0 + "0001";
-			end if; 
+			end if;
 		end if;
-		
+
 	  -- decrease credit only when in credit mode
 		-- CPU spy this counter to start a new game
 		if cs51XX_credit_mode = '1' then
 			  -- decreasing credit by 1 will start a new game for 1 player
 			if (start1 = '0' and start1_r = '1') then
-				if credit_bcd_0 = "0000" then 
+				if credit_bcd_0 = "0000" then
 					if credit_bcd_1 /= "0000" then
 						cs51XX_credit_mode <= '0';
 						credit_bcd_1 <= credit_bcd_1 - "0001";
@@ -1223,7 +1223,7 @@ begin
 				else
 					cs51XX_credit_mode <= '0';
 					credit_bcd_0 <= credit_bcd_0 - "0001";
-				end if; 		
+				end if;
 			end if;
 
 		  -- decreasing credit by 2 (at once) will start a new game for 2 player
@@ -1232,7 +1232,7 @@ begin
  					if credit_bcd_1 /= "0000" then
 						cs51XX_credit_mode <= '0';
 						credit_bcd_1 <= credit_bcd_1 - "0001";
-						if credit_bcd_0 = "0000" then 
+						if credit_bcd_0 = "0000" then
 							credit_bcd_0 <= "1000";
 						else
 							credit_bcd_0 <= "1001";
@@ -1240,11 +1240,11 @@ begin
 					end if;
 				else
 					cs51XX_credit_mode <= '0';
-					credit_bcd_0 <= credit_bcd_0 - "0010";					
+					credit_bcd_0 <= credit_bcd_0 - "0010";
 				end if;
 			end if;
 		end if;
-		
+
   end if;
  end if;
 end process;
@@ -1273,30 +1273,30 @@ joy <= X"8" when "0000",
 with cs51XX_data_cnt select
 cs51XX_switch_mode_do <= 	not (left & '0' & right & '0' & left & '0' & right & '0' )         when "00",
 													not (b_test & b_svce & '0' & coin & start2 & start1 & fire & fire) when "01",
-													X"00" when others;	
+													X"00" when others;
 -- N.U. (galaga configuration)
 --cs51XX_switch_mode_do <= 	not (left2 & '0' & right2 & '0' & left1 & '0' & right1 & '0' )       when "00",
 --													not (b_test & b_svce & '0' & coin & start2 & start1 & fire2 & fire1) when "01",
---													X"00" when others;	
+--													X"00" when others;
 
 -- non swicth mode reply with respect to reply rank
 with cs51XX_data_cnt select
 cs51XX_non_switch_mode_do <= 	credit_bcd_1 & credit_bcd_0 when "00", -- credits (cpu spy this to start a new game)
 															"00" & not fire & not fire_impulse & joy when "01",
 															X"38" when "10",
-															X"00" when "11"; -- N.U.	
+															X"00" when "11"; -- N.U.
 
--- fire trigger fire_impulse for 1 frame 
-process (clock_18, fire) 
+-- fire trigger fire_impulse for 1 frame
+process (clock_18, fire)
 begin
 	if rising_edge(clock_18) then
-		
+
 		fire_r <= fire;
-		
+
 		if fire_r = '0' and fire = '1' then
 			fire_impulse_trig <= '1';
 		end if;
-		
+
 		if vcnt = "000000000" and hcnt = "100000000" and ena_vidgen = '1' then
 			fire_impulse <= '0';
 			if fire_impulse_trig = '1' then
@@ -1304,32 +1304,32 @@ begin
 				fire_impulse <= '1';
 			end if;
 		end if;
-		
+
 	end if;
 end process;
-															
+
 -- N.U. (galaga configuration)
 --cs51XX_non_switch_mode_do <= 	credit_bcd_1 & credit_bcd_0 when "00", -- credits (cpu spy this)
 --															not ("110" & fire1 & left1 & '0' & right1 & '0' ) when "01",
 --															not ("110" & fire2 & left2 & '0' & right2 & '0' ) when "10",
---															X"00" when "11"; -- N.U.	
+--															X"00" when "11"; -- N.U.
 
--- select reply with respect to current mode 
+-- select reply with respect to current mode
 cs51XX_do <= cs51XX_switch_mode_do when cs51XX_switch_mode = '1' else cs51XX_non_switch_mode_do;
 
 -- reply for cmd_80 mode (rough emulation)
 with cs50XX_data_cnt select
-cs50XX_cmd_80_do <= 	X"80" when "00",
+cs50XX_cmd_80_do <=	X"80" when "00",
 											X"00" when "01",
 											X"00" when "10",
-										  X"05"	when others;	
+										  X"05"	when others;
 
 -- reply for cmd_E5 mode (rough emulation)
 with cs50XX_data_cnt select
 cs50XX_cmd_E5_do <= 	X"F0" when "00",
 											X"00" when "01",
 											X"00" when "10",
-										  X"95"	when others;	
+										  X"95"	when others;
 
 -- select reply with respect to current mode (rough emulation)
 --cs50XX_do <= cs50XX_cmd_80_do when cs50XX_cmd = X"80" else cs50XX_cmd_E5_do;
@@ -1382,8 +1382,8 @@ cpus_di <= 	rom_bus_do when "00000",
 						attr_ram_do when "10111",
 						code_ram_do when "11000",
 						code_ram_do when "11001",
-						terrain_do  when "11110", 
-						terrain_do  when "11111", 
+						terrain_do  when "11110",
+						terrain_do  when "11111",
 						X"00"       when others;
 
 -- video address/sync generator
@@ -1503,7 +1503,7 @@ port map(
  sc_out_n  => open,
  so_n      => open,
  to_n      => open,
- 
+
  rom_addr  => cs54xx_rom_addr,
  rom_data  => cs54xx_rom_do
 );
@@ -1527,7 +1527,7 @@ mb88_50xx : entity work.mb88
 port map(
  reset_n    => reset_cpu_n, --reset_n,
  clock      => clock_18,
- ena        => cs54xx_ena, -- same clock for 50XX, 51XX, 54XX 
+ ena        => cs54xx_ena, -- same clock for 50XX, 51XX, 54XX
 
  r0_port_in  => cs50xx_r0_port_in,  -- pin 12,13,15,16 (data in 0-3)
  r1_port_in  => X"0",
@@ -1550,7 +1550,7 @@ port map(
  sc_out_n  => open,
  so_n      => open,
  to_n      => open,
- 
+
  rom_addr  => cs50xx_rom_addr,
  rom_data  => cs50xx_rom_do
 );
@@ -1673,7 +1673,7 @@ port map(
  address_a => ram_bus_addr(10 downto 0),
  data_a    => mux_cpu_do,
  q_a       => wram1_do,
- 
+
  clock_b   => clock_18,
  wren_b    => hs_write,
  address_b => hs_address(10 downto 0),
