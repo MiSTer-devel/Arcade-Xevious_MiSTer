@@ -246,6 +246,8 @@ pll pll
 
 wire [31:0] status;
 wire  [1:0] buttons;
+wire [10:0] ps2_key;
+
 wire        forced_scandoubler;
 wire        direct_video;
 
@@ -284,27 +286,67 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	.ioctl_din(ioctl_din),
 	.ioctl_index(ioctl_index),
 
+	.ps2_key(ps2_key),
 	.joystick_0(joystick_0),
 	.joystick_1(joystick_1)
 );
 
-wire m_start1 = joystick_0[6] | joystick_1[7];
-wire m_coin1  = joystick_0[8];
-wire m_up1    = joystick_0[3];
-wire m_down1  = joystick_0[2];
-wire m_left1  = joystick_0[1];
-wire m_right1 = joystick_0[0];
-wire m_fire1  = joystick_0[4];
-wire m_bomb1  = joystick_0[5];
+wire key_start1, key_start2;
+wire key_coin1, key_coin2, key_coin3, key_coin4;
+wire key_reset, key_service;
 
-wire m_start2 = joystick_1[6] | joystick_0[7];
-wire m_coin2  = joystick_1[8];
-wire m_up2    = joystick_1[3];
-wire m_down2  = joystick_1[2];
-wire m_left2  = joystick_1[1];
-wire m_right2 = joystick_1[0];
-wire m_fire2  = joystick_1[4];
-wire m_bomb2  = joystick_1[5];
+wire key_p1_up, key_p1_left, key_p1_down, key_p1_right, key_p1_fire, key_p1_bomb;
+wire key_p2_up, key_p2_left, key_p2_down, key_p2_right, key_p2_fire, key_p2_bomb;
+
+wire pressed = ps2_key[9];
+always @(posedge clk_sys) begin
+	reg old_state;
+
+	old_state <= ps2_key[10];
+	if(old_state ^ ps2_key[10]) begin
+		casex(ps2_key[8:0])
+			'h016: key_start1   <= pressed; // 1
+			'h01e: key_start2   <= pressed; // 2
+			'h02E: key_coin1    <= pressed; // 5
+			'h036: key_coin2    <= pressed; // 6
+			'h004: key_reset    <= pressed; // F3
+			'h046: key_service  <= pressed; // 9
+
+			'hX75: key_p1_up    <= pressed; // up
+			'hX6b: key_p1_left  <= pressed; // left
+			'hX72: key_p1_down  <= pressed; // down
+			'hX74: key_p1_right <= pressed; // right
+			'h014: key_p1_fire  <= pressed; // lctrl
+			'h011: key_p1_bomb  <= pressed; // lalt
+
+			'h02d: key_p2_up    <= pressed; // r
+			'h023: key_p2_left  <= pressed; // d
+			'h02b: key_p2_down  <= pressed; // f
+			'h034: key_p2_right <= pressed; // g
+			'h01c: key_p2_fire  <= pressed; // a
+			'h01b: key_p2_bomb  <= pressed; // s
+		endcase
+	end
+end
+
+
+wire m_start1 = joystick_0[6] | joystick_1[7] | key_start1;
+wire m_coin1  = joystick_0[8] | key_coin1;
+wire m_up1    = joystick_0[3] | key_p1_up;
+wire m_down1  = joystick_0[2] | key_p1_down;
+wire m_left1  = joystick_0[1] | key_p1_left;
+wire m_right1 = joystick_0[0] | key_p1_right;
+wire m_fire1  = joystick_0[4] | key_p1_fire;
+wire m_bomb1  = joystick_0[5] | key_p1_bomb;
+
+wire m_start2 = joystick_1[6] | joystick_0[7] | key_start2;
+wire m_coin2  = joystick_1[8] | key_coin2;
+wire m_up2    = joystick_1[3] | key_p2_up;
+wire m_down2  = joystick_1[2] | key_p2_down;
+wire m_left2  = joystick_1[1] | key_p2_left;
+wire m_right2 = joystick_1[0] | key_p2_right;
+wire m_fire2  = joystick_1[4] | key_p2_fire;
+wire m_bomb2  = joystick_1[5] | key_p2_bomb;
 
 wire m_pause  = joy[9];
 
@@ -364,7 +406,7 @@ always @(posedge clk_48) begin
 end
 
 wire rom_download = ioctl_download & !ioctl_index;
-wire reset = RESET | status[0] | buttons[1] | rom_download | service_trigger;
+wire reset = RESET | status[0] | buttons[1] | rom_download | service_trigger | key_reset;
 
 xevious xevious
 (
@@ -391,7 +433,8 @@ xevious xevious
 	.audio(audio),
 
 	.self_test(status[6]),
-	.service(1),
+
+	.service(key_service),
 	.coin1(m_coin1),
 	.coin2(m_coin2),
 	.start1(m_start1),
