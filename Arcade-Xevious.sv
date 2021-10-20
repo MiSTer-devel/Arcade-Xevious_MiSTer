@@ -200,10 +200,10 @@ localparam CONF_STR = {
 	"OOR,CRT H-sync adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
 	"OSV,CRT V-sync adjust,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1;",
 	"O8,Flip Screen,Off,On;",
+	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"-;",
 	"H0OJK,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"H0O2,Orientation,Vert,Horz;",
-	"O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
 	"-;",
 	"DIP;",
 	"-;",
@@ -212,6 +212,7 @@ localparam CONF_STR = {
 	"P1OP,Pause when OSD is open,On,Off;",
 	"P1OQ,Dim video after 10s,On,Off;",
 	"-;",
+	"O6,Service Mode,Off,On;",
 	"R0,Reset;",
 	"J1,Fire,Bomb,Start 1P,Start 2P,Coin,Pause;",
 	"jn,A,B,Start,Select,R,L;",
@@ -287,22 +288,24 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 	.joystick_1(joystick_1)
 );
 
-//wire m_up_2    = joy[3];
-//wire m_down_2  = joy[2];
-//wire m_left_2  = joy[1];
-//wire m_right_2 = joy[0];
-//wire m_fire_2  = joy[4];
-wire m_bomb_2  = joy[5];
-wire m_up      = joy[3];
-wire m_down    = joy[2];
-wire m_left    = joy[1];
-wire m_right   = joy[0];
-wire m_fire    = joy[4];
-wire m_bomb    = joy[5];
+wire m_start1 = joystick_0[6] | joystick_1[7];
+wire m_coin1  = joystick_0[8];
+wire m_up1    = joystick_0[3];
+wire m_down1  = joystick_0[2];
+wire m_left1  = joystick_0[1];
+wire m_right1 = joystick_0[0];
+wire m_fire1  = joystick_0[4];
+wire m_bomb1  = joystick_0[5];
 
-wire m_start1 = joy[6];
-wire m_start2 = joy[7];
-wire m_coin   = joy[8];
+wire m_start2 = joystick_1[6] | joystick_0[7];
+wire m_coin2  = joystick_1[8];
+wire m_up2    = joystick_1[3];
+wire m_down2  = joystick_1[2];
+wire m_left2  = joystick_1[1];
+wire m_right2 = joystick_1[0];
+wire m_fire2  = joystick_1[4];
+wire m_bomb2  = joystick_1[5];
+
 wire m_pause  = joy[9];
 
 
@@ -353,8 +356,15 @@ assign AUDIO_L = {audio, 5'b00000};
 assign AUDIO_R = AUDIO_L;
 assign AUDIO_S = 0;
 
+wire service, service_r, service_trigger;
+always @(posedge clk_48) begin
+	service <= status[6];
+	service_r <= service;
+	service_trigger <= service & !service_r;
+end
+
 wire rom_download = ioctl_download & !ioctl_index;
-wire reset = RESET | status[0] | buttons[1] | rom_download;
+wire reset = RESET | status[0] | buttons[1] | rom_download | service_trigger;
 
 xevious xevious
 (
@@ -380,19 +390,25 @@ xevious xevious
 
 	.audio(audio),
 
-	.b_test(1),
-	.b_svce(1),
-	.coin(m_coin),
+	.self_test(status[6]),
+	.service(1),
+	.coin1(m_coin1),
+	.coin2(m_coin2),
 	.start1(m_start1),
 	.start2(m_start2),
-	.up(m_up),
-	.down(m_down),
-	.left(m_left),
-	.right(m_right),
-	.fire(m_fire),
-	.bomb(m_bomb),
+	.up1(m_up1),
+	.down1(m_down1),
+	.left1(m_left1),
+	.right1(m_right1),
+	.fire1(m_fire1),
+	.up2(m_up2),
+	.down2(m_down2),
+	.left2(m_left2),
+	.right2(m_right2),
+	.fire2(m_fire2),
+
 	.dip_switch_a(dsw[0]),
-	.dip_switch_b({dsw[1][7:5], ~m_bomb_2, dsw[1][3:1], ~m_bomb}),
+	.dip_switch_b({dsw[1][7:5], ~m_bomb2, dsw[1][3:1], ~m_bomb1}),
 
 	.pause(pause_cpu),
 
