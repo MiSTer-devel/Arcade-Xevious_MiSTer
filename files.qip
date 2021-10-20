@@ -9,6 +9,7 @@ set_global_assignment -name VHDL_FILE rtl/sp_palette_msb.vhd
 set_global_assignment -name VHDL_FILE rtl/sp_palette_lsb.vhd
 set_global_assignment -name VHDL_FILE rtl/sound_seq.vhd
 set_global_assignment -name VHDL_FILE rtl/sound_samples.vhd
+set_global_assignment -name VHDL_FILE rtl/sound_lpf.vhd
 set_global_assignment -name VHDL_FILE rtl/red.vhd
 set_global_assignment -name VHDL_FILE rtl/green.vhd
 set_global_assignment -name VHDL_FILE rtl/blue.vhd

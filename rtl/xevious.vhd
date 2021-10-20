@@ -157,7 +157,7 @@ port(
  v_offset	: in signed(3 downto 0);
  test_v         : in std_logic_vector (3 downto 0);
 
- audio          : out std_logic_vector(10 downto 0);
+ audio          : out std_logic_vector(15 downto 0);
 
 -- ledr           : out std_logic_vector(17 downto 0);
 -- sw             : in  std_logic_vector(17 downto 0);
@@ -309,6 +309,10 @@ architecture struct of xevious is
  signal cs54xx_audio_2    : std_logic_vector( 3 downto 0);
  signal cs54xx_audio_3    : std_logic_vector( 3 downto 0);
 
+ signal cs54xx_audio_1_lpf: std_logic_vector(15 downto 0);
+ signal cs54xx_audio_2_lpf: std_logic_vector(15 downto 0);
+ signal cs54xx_audio_3_lpf: std_logic_vector(15 downto 0);
+
  -- signal cs50XX_data_cnt   : std_logic_vector( 1 downto 0);
  -- signal cs50XX_cmd        : std_logic_vector( 7 downto 0);
  -- signal cs50XX_cmd_80_do  : std_logic_vector( 7 downto 0);
@@ -440,9 +444,10 @@ video_en  <= ena_vidgen;
 dip_switch_do <= 	dip_switch_a(to_integer(unsigned(ram_bus_addr(3 downto 0)))) &
 									dip_switch_b(to_integer(unsigned(ram_bus_addr(3 downto 0))));
 
-audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ("00" & cs54xx_audio_2 &  "00000" )+ ('0'&snd_audio);
---audio <= ("00" & cs54xx_audio_1 &  "00000" ) + ('0'&snd_audio);
---audio <= ('0'&snd_audio);
+audio <= ("00" & cs54xx_audio_1_lpf(15 downto 2))
+       + ("00" & cs54xx_audio_2_lpf(15 downto 2))
+       + ("00" & cs54xx_audio_3_lpf(15 downto 2))
+       + ('0' & snd_audio & "00000");
 
 -- sp stand for sprite, fg stand for foreground and bg stand for background.
 -- make access slots from 18MHz
@@ -1349,34 +1354,34 @@ port map
 -- mb88 - cs54xx (28 pins IC, 1024 bytes rom)
 mb88_54xx : entity work.mb88
 port map(
- reset_n    => reset_cpu_n, --reset_n,
- clock      => clock_18,
- ena        => cs54xx_ena,
+	reset_n    => reset_cpu_n, --reset_n,
+	clock      => clock_18,
+	ena        => cs54xx_ena,
 
- r0_port_in  => cs54xx_r0_port_in, -- pin 12,13,15,16
- r1_port_in  => X"0",
- r2_port_in  => X"0",
- r3_port_in  => X"0",
- r0_port_out => open,
- r1_port_out => cs54xx_audio_3,   -- pin 17,18,19,20 (resistor divider )
- r2_port_out => open,
- r3_port_out => open,
- k_port_in   => cs54xx_k_port_in, -- pin 24,25,26,27
- ol_port_out => cs54xx_audio_1,   -- pin  4, 5, 6, 7 (resistor divider 150K/22K)
- oh_port_out => cs54xx_audio_2,   -- pin  8, 9,10,11 (resistor divider  47K/10K)
- p_port_out  => open,
+	r0_port_in  => cs54xx_r0_port_in, -- pin 12,13,15,16
+	r1_port_in  => X"0",
+	r2_port_in  => X"0",
+	r3_port_in  => X"0",
+	r0_port_out => open,
+	r1_port_out => cs54xx_audio_3,   -- pin 17,18,19,20 (resistor divider 100K/22K)
+	r2_port_out => open,
+	r3_port_out => open,
+	k_port_in   => cs54xx_k_port_in, -- pin 24,25,26,27
+	ol_port_out => cs54xx_audio_1,   -- pin  4, 5, 6, 7 (resistor divider 150K/22K)
+	oh_port_out => cs54xx_audio_2,   -- pin  8, 9,10,11 (resistor divider  47K/10K)
+	p_port_out  => open,
 
- stby_n    => '0',
- tc_n      => '0',
- irq_n     => cs54xx_irq_n,
- sc_in_n   => '0',
- si_n      => '0',
- sc_out_n  => open,
- so_n      => open,
- to_n      => open,
+	stby_n    => '0',
+	tc_n      => '0',
+	irq_n     => cs54xx_irq_n,
+	sc_in_n   => '0',
+	si_n      => '0',
+	sc_out_n  => open,
+	so_n      => open,
+	to_n      => open,
 
- rom_addr  => cs54xx_rom_addr,
- rom_data  => cs54xx_rom_do
+	rom_addr  => cs54xx_rom_addr,
+	rom_data  => cs54xx_rom_do
 );
 
 -- cs54xx program ROM
@@ -1391,6 +1396,54 @@ port map
 	clock_b   => clock_18n,
 	address_b => cs54xx_rom_addr(9 downto 0),
 	q_b       => cs54xx_rom_do
+);
+
+-- cs54xx audio 1 low pass filter
+cs54xx_lpf1 : entity work.lpf
+port map(
+	clock     => clock_18,
+	reset     => reset,
+	div       => 768, -- sample rate: 18MHz/768 = 23437.5Hz
+	audio_in  => ("00"&cs54xx_audio_1&"0000"),
+	gain_in   => 2,
+	r1        => 150000,
+	r2        => 22000,
+	dt_over_c3 => 4267, -- 1/23437.5/0.01e-6
+	dt_over_c4 => 4267, -- 1/23437.5/0.01e-6
+	r5        => 470000,
+	audio_out => cs54xx_audio_1_lpf
+);
+
+-- cs54xx audio2 low pass filter
+cs54xx_lpf2 : entity work.lpf
+port map(
+	clock     => clock_18,
+	reset     => reset,
+	div       => 768, -- sample rate: 18MHz/768 = 23437.5Hz
+	audio_in  => ("00"&cs54xx_audio_2&"0000"),
+	gain_in   => 2,
+	r1        => 47000,
+	r2        => 10000,
+	dt_over_c3 => 4267, -- 1/23437.5/0.01e-6
+	dt_over_c4 => 4267, -- 1/23437.5/0.01e-6
+	r5        => 150000,
+	audio_out => cs54xx_audio_2_lpf
+);
+
+-- cs54xx audio3 low pass filter
+cs54xx_lpf3 : entity work.lpf
+port map(
+	clock     => clock_18,
+	reset     => reset,
+	div       => 768, -- sample rate: 18MHz/768 = 23437.5Hz
+	audio_in  => ("00"&cs54xx_audio_3&"0000"),
+	gain_in   => 2,
+	r1        => 100000,
+	r2        => 22000,
+	dt_over_c3 => 42667, -- 1/23437.5/0.001e-6
+	dt_over_c4 => 42667, -- 1/23437.5/0.001e-6
+	r5        => 220000,
+	audio_out => cs54xx_audio_3_lpf
 );
 
 -- mb88 - cs50xx (28 pins IC, 2048 bytes rom)
