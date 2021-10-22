@@ -374,10 +374,11 @@ always @(posedge clk_48) begin
 	ce_pix <= !div;
 end
 
-wire rotate_ccw = 0;
-wire no_rotate = status[2] | direct_video  ;
-screen_rotate screen_rotate (.*);
+wire flip_screen = status[8];
+wire rotate_ccw = flip_screen;
+wire no_rotate = status[2] | direct_video;
 
+screen_rotate screen_rotate (.*);
 
 arcade_video #(288,12) arcade_video
 (
@@ -426,7 +427,7 @@ xevious xevious
 	.blank_h(hblank),
 	.blank_v(vblank),
 
-	.flip(status[8]),
+	.flip(flip_screen),
 	.h_offset(status[27:24]),
 	.v_offset(status[31:28]),
 
