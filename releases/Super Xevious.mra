@@ -1,16 +1,35 @@
 <misterromdescription>
 	<name>Super Xevious</name>
 	<rbf>xevious</rbf>
-	<setname>sxevious</setname>
+	<homebrew>no</homebrew>
+	<bootleg>no</bootleg>
+	<version></version>
+	<year>1982</year>
+	<manufacturer>Namco</manufacturer>
+	<category>Shooter - Vertical</category>
+	<setname>xevious</setname>
+	<parent>xevious</parent>
+	<mameversion>0229</mameversion>
+
+	<resolution>15kHz</resolution>
+	<rotation>vertical (cw)</rotation>
+	<flip>yes</flip>
+
+	<players>2 (alternating)</players>
+	<joystick>8-way</joystick>
+
 	<switches default="00,80" base="8">
 		<!-- SWA -->
 		<dip bits="0,1"   name="Coin A"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
-		<dip bits="10,11" name="Coin B"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
+		<dip bits="2,4"   name="Bonus"	 ids="20k 60k every 60k,10k 40k every 40k,10k 50k every 50k,20k 50k every 50k,20k 70k every 70k,20k 80k every 80k,20k 60k,None"/>
 		<dip bits="5,6"   name="Lives"   ids="3,1,2,5"/>
+		<!-- disable broken cocktail mode -->
+		<!--
 		<dip bits="7"     name="Cabinet" ids="Upright,Cocktail"/>
-
+		-->
 		<!-- SWB -->
 		<dip bits="9"	  name="Flags Award Bonus Life" ids="Yes,No"/>
+		<dip bits="10,11" name="Coin B"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
 		<dip bits="13,14" name="Difficulty" ids="Normal,Easy,Hard,Hardest"/>
 		<dip bits="15"    name="Freeze"	ids="On,Off"/>
 	</switches>
@@ -55,12 +74,12 @@
 	<rom index="2"></rom>
 	<rom index="3" md5="none">
 		<part>
-			00 00 85 10 00 4D 00 24
-			00 00 80 24 00 03 00 00
-			00 00 80 25 00 01 40 40
+			00008510 004d 00 24
+			00008024 0003 00 00
+			00008025 0001 40 40
 		</part>
 	</rom>
 	<rom index="4"></rom>
 	<nvram index="4" size="81"></nvram>
-	<mratimestamp>20210820134501</mratimestamp>
+	<mratimestamp>20211022143020</mratimestamp>
 </misterromdescription>

@@ -13,28 +13,28 @@
 
 	<setname>xevious</setname>
 	<parent>xevious</parent>
-	<mameversion>0220</mameversion>
+	<mameversion>0229</mameversion>
 	<rbf>xevious</rbf>
 	<about></about>
 
 	<resolution>15kHz</resolution>
 	<rotation>vertical (cw)</rotation>
-	<flip>no</flip>
+	<flip>yes</flip>
 
 	<players>2 (alternating)</players>
 	<joystick>8-way</joystick>
 	<switches default="00,1d" base="8">
 		<!-- SWA -->
-		<!-- Coin switches not functional -->
-		<!--
-		<dip bits="0,1"   name="Coin A"  ids="1C_1C,1C_2C,2C_1C,2C_3C"/>
-		<dip bits="10,11" name="Coin B"  ids="1C_1C,1C_2C,2C_1C,2C_3C"/>
-		-->
+		<dip bits="0,1"   name="Coin A"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
 		<dip bits="2,4"   name="Bonus"	 ids="20k 60k every 60k,10k 40k every 40k,10k 50k every 50k,20k 50k every 50k,20k 70k every 70k,20k 80k every 80k,20k 60k,None"/>
 		<dip bits="5,6"   name="Lives"	 ids="3,1,2,5"/>
+		<!-- disable broken cocktail mode -->
+		<!--
 		<dip bits="7"	  name="Cabinet" ids="Upright,Cocktail"/>
+		-->
 		<!-- SWB -->
 		<dip bits="9"	  name="Flags Award Bonus Life" ids="Yes,No"/>
+		<dip bits="10,11" name="Coin B"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
 		<dip bits="13,14" name="Difficulty"  ids="Normal,Easy,Hard,Hardest"/>
 		<dip bits="15"	  name="Freeze"  ids="Off,On"/>
 	</switches>
