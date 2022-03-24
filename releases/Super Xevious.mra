@@ -1,21 +1,15 @@
 <misterromdescription>
-	<name>Xevious</name>
-	<region></region>
+	<name>Super Xevious</name>
+	<rbf>xevious</rbf>
 	<homebrew>no</homebrew>
 	<bootleg>no</bootleg>
 	<version></version>
-	<alternative></alternative>
-	<platform></platform>
-	<series></series>
 	<year>1982</year>
 	<manufacturer>Namco</manufacturer>
 	<category>Shooter - Vertical</category>
-
 	<setname>xevious</setname>
 	<parent>xevious</parent>
 	<mameversion>0229</mameversion>
-	<rbf>xevious</rbf>
-	<about></about>
 
 	<resolution>15kHz</resolution>
 	<rotation>vertical (cw)</rotation>
@@ -23,34 +17,35 @@
 
 	<players>2 (alternating)</players>
 	<joystick>8-way</joystick>
-	<switches default="00,1d" base="8">
+
+	<switches default="00,80" base="8">
 		<!-- SWA -->
 		<dip bits="0,1"   name="Coin A"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
 		<dip bits="2,4"   name="Bonus"	 ids="20k 60k every 60k,10k 40k every 40k,10k 50k every 50k,20k 50k every 50k,20k 70k every 70k,20k 80k every 80k,20k 60k,None"/>
-		<dip bits="5,6"   name="Lives"	 ids="3,1,2,5"/>
+		<dip bits="5,6"   name="Lives"   ids="3,1,2,5"/>
 		<!-- disable broken cocktail mode -->
 		<!--
-		<dip bits="7"	  name="Cabinet" ids="Upright,Cocktail"/>
+		<dip bits="7"     name="Cabinet" ids="Upright,Cocktail"/>
 		-->
 		<!-- SWB -->
 		<dip bits="9"	  name="Flags Award Bonus Life" ids="Yes,No"/>
 		<dip bits="10,11" name="Coin B"  ids="1 Coin  1 Credit ,1 Coin  2 Credits,2 Coins 1 Credit ,2 Coins 3 Credits"/>
-		<dip bits="13,14" name="Difficulty"  ids="Normal,Easy,Hard,Hardest"/>
-		<dip bits="15"	  name="Freeze"  ids="Off,On"/>
+		<dip bits="13,14" name="Difficulty" ids="Normal,Easy,Hard,Hardest"/>
+		<dip bits="15"    name="Freeze"	ids="On,Off"/>
 	</switches>
 	<rom index="1"/>
-	<rom index="0" md5="1b707668eb52408088e47c0f823f9fed" zip="xevious.zip|namco50.zip|namco51.zip|namco54.zip">
+	<rom index="0" zip="xevious.zip|namco50.zip|namco51.zip|namco54.zip" type="merged" md5="none">
 		<!-- main cpu -->
-		<part crc="09964dda" name="xvi_1.3p"/>
-		<part crc="60ecce84" name="xvi_2.3m"/>
-		<part crc="79754b7d" name="xvi_3.2m"/>
-		<part crc="c7d4bbf0" name="xvi_4.2l"/>
+                <part crc="1c8d27d5" name="cpu_3p.rom"/>
+                <part crc="fd04e615" name="cpu_3m.rom"/>
+                <part crc="294d5404" name="xv3_3.2m"/>
+                <part crc="6a44bf92" name="xv3_4.2l"/>
 
-		<!-- sub cpu -->
-		<part crc="c85b703f" name="xvi_5.3f"/>
-		<part crc="e18cdaad" name="xvi_6.3j"/>
+		<!-- cpu 2 -->
+		<part crc="d4bd3d81" name="xv3_5.3f"/>
+		<part crc="af06be5f" name="xv3_6.3j"/>
 
-		<!-- sub cpu 2 -->
+		<!-- cpu 3 -->
 		<part crc="dd35cf1c" name="xvi_7.2c"/>
 
 		<!-- foreground -->
@@ -71,21 +66,20 @@
 		<part crc="ae3ba9e5" name="xvi_10.2b"/>
 		<part crc="31e244dd" name="xvi_11.2c"/>
 
-		<!-- namco cus -->
-		<part crc="a0acbaf7" name="50xx.bin"/>
-		<part crc="c2f57ef8" name="51xx.bin"/>
-		<part crc="ee7357e0" name="54xx.bin"/>
+		<!-- namco mcus -->
+                <part crc="a0acbaf7" name="50xx.bin"/>
+                <part crc="c2f57ef8" name="51xx.bin"/>
+                <part crc="ee7357e0" name="54xx.bin"/>
 	</rom>
 	<rom index="2"></rom>
 	<rom index="3" md5="none">
 		<part>
-			00 FF FF FF 00 FF 00 02 00 02 00 01 00 FF 02 00
-			00 00 85 10 00 4D 00 24
-			00 00 80 24 00 03 00 00
-			00 00 80 25 00 01 40 40
+			00008510 004d 00 24
+			00008024 0003 00 00
+			00008025 0001 40 40
 		</part>
 	</rom>
 	<rom index="4"></rom>
 	<nvram index="4" size="81"></nvram>
-	<mratimestamp>20210722234501</mratimestamp>
+	<mratimestamp>20211022143020</mratimestamp>
 </misterromdescription>
