@@ -175,6 +175,7 @@ module emu
 
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 
 assign VGA_F1    = 0;
 assign VGA_SCALER= 0;
@@ -193,6 +194,12 @@ wire [1:0] ar = status[20:19];
 assign VIDEO_ARX = (!ar) ? ((status[2] ) ? 8'd4 : 8'd3) : (ar - 1'd1);
 assign VIDEO_ARY = (!ar) ? ((status[2] ) ? 8'd3 : 8'd4) : 12'd0;
 
+// Status Bit Map:
+//              Upper                          Lower
+// 0         1         2         3          4         5         6
+// 01234567890123456789012345678901 23456789012345678901234567890123
+// 0123456789ABCDEFGHIJKLMNOPQRSTUV 0123456789ABCDEFGHIJKLMNOPQRSTUV
+// X XXXXX X XXX      XX   XXXXXXXX
 
 `include "build_id.v"
 localparam CONF_STR = {
@@ -208,10 +215,10 @@ localparam CONF_STR = {
 	"H0P1O2,Orientation,Vert,Horz;",
 	"DIP;",
 	"-;",
-	"H1OR,Autosave Hiscores,Off,On;",
+	"H1OC,Autosave Hiscores,Off,On;",
 	"P2,Pause options;",
-	"P2OP,Pause when OSD is open,On,Off;",
-	"P2OQ,Dim video after 10s,On,Off;",
+	"P2OA,Pause when OSD is open,On,Off;",
+	"P2OB,Dim video after 10s,On,Off;",
 	"-;",
 	"O6,Service Mode,Off,On;",
 	"R0,Reset;",
@@ -358,7 +365,7 @@ pause #(4,4,4,12) pause (
 	.*,
 	.user_button(m_pause),
 	.pause_request(hs_pause),
-	.options(~status[26:25])
+	.options(~status[11:10])
 );
 
 wire hblank, vblank;
@@ -484,7 +491,7 @@ hiscore #(
 	.*,
 	.clk(clk_sys),
 	.paused(pause_cpu),
-	.autosave(status[27]),
+	.autosave(status[12]),
 	.ram_address(hs_address),
 	.data_from_ram(hs_data_out),
 	.data_to_ram(hs_data_in),
